@@ -362,3 +362,58 @@ func TestAIService_ParseBatchText_Disabled(t *testing.T) {
 	_, err := svc.ParseBatchText(context.Background(), tGroup.ID, "物品A在箱子1")
 	assert.ErrorIs(t, err, ErrAIDisabled)
 }
+
+func TestAIService_SearchItems_HappyPath(t *testing.T) {
+	ctx := context.Background()
+
+	itemType, err := tRepos.EntityTypes.GetDefault(ctx, tGroup.ID, false)
+	require.NoError(t, err)
+
+	loc, err := tRepos.Entities.CreateContainer(ctx, tGroup.ID, repo.EntityCreate{Name: "search-loc-" + fk.Str(6)})
+	require.NoError(t, err)
+
+	knife1, err := tRepos.Entities.Create(ctx, tGroup.ID, repo.EntityCreate{Name: "菜刀", EntityTypeID: itemType.ID, ParentID: loc.ID})
+	require.NoError(t, err)
+	knife2, err := tRepos.Entities.Create(ctx, tGroup.ID, repo.EntityCreate{Name: "水果刀", EntityTypeID: itemType.ID, ParentID: loc.ID})
+	require.NoError(t, err)
+	_, err = tRepos.Entities.Create(ctx, tGroup.ID, repo.EntityCreate{Name: "螺丝刀", EntityTypeID: itemType.ID, ParentID: loc.ID})
+	require.NoError(t, err)
+
+	reply := aiReplyJSON(t, fmt.Sprintf(`{"itemIds":[%q,%q,"not-a-real-id"]}`, knife2.ID.String(), knife1.ID.String()))
+
+	capture := &capturedAIRequest{}
+	srv := newMockAIServer(t, http.StatusOK, reply, capture)
+	svc := newTestAIService(srv.URL+"/v1", 5*time.Second)
+
+	result, err := svc.SearchItems(ctx, tGroup.ID, "刀子")
+	require.NoError(t, err)
+	require.Len(t, result.Items, 2, "unknown id should be dropped")
+
+	assert.Equal(t, knife2.ID, result.Items[0].ID, "model relevance order must be preserved")
+	assert.Equal(t, knife1.ID, result.Items[1].ID)
+	assert.Equal(t, "水果刀", result.Items[0].Name)
+
+	assert.Contains(t, capture.system, "菜刀", "candidates must be listed in the system prompt")
+	assert.Contains(t, capture.system, loc.Name, "candidate lines must carry the location name")
+}
+
+func TestAIService_SearchItems_EmptyQuery(t *testing.T) {
+	svc := newTestAIService("http://unused.invalid", 5*time.Second)
+	_, err := svc.SearchItems(context.Background(), tGroup.ID, "  ")
+	require.ErrorContains(t, err, "empty")
+}
+
+func TestAIService_SearchItems_MalformedReply(t *testing.T) {
+	capture := &capturedAIRequest{}
+	srv := newMockAIServer(t, http.StatusOK, aiReplyJSON(t, "not json"), capture)
+	svc := newTestAIService(srv.URL, 5*time.Second)
+
+	_, err := svc.SearchItems(context.Background(), tGroup.ID, "刀子")
+	require.ErrorContains(t, err, "no JSON object")
+}
+
+func TestAIService_SearchItems_Disabled(t *testing.T) {
+	svc := NewAIService(tRepos, config.AIConf{})
+	_, err := svc.SearchItems(context.Background(), tGroup.ID, "刀子")
+	assert.ErrorIs(t, err, ErrAIDisabled)
+}

@@ -384,6 +384,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/entities/ai-search": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Semantically searches the group's items with the configured AI",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entities"
+                ],
+                "summary": "AI Semantic Item Search",
+                "parameters": [
+                    {
+                        "description": "Search text",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.aiSearchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.EntityAISearchResult"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/entities/ai-suggest": {
             "post": {
                 "security": [
@@ -6417,6 +6474,17 @@ const docTemplate = `{
                 }
             }
         },
+        "services.EntityAISearchResult": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repo.EntitySummary"
+                    }
+                }
+            }
+        },
         "services.EntityAISuggestion": {
             "type": "object",
             "properties": {
@@ -6784,6 +6852,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.aiSearchRequest": {
+            "type": "object",
+            "properties": {
+                "query": {
                     "type": "string"
                 }
             }

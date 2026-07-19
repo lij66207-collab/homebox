@@ -1,6 +1,7 @@
 import { BaseAPI, route } from "../base";
 import type {
   EntityAIBatchResult,
+  EntityAISearchResult,
   EntityAISuggestion,
   EntityCreate,
   EntityListResult,
@@ -199,6 +200,13 @@ export class ItemsApi extends BaseAPI {
     return this.http.post<{ text: string }, EntityAIBatchResult>({
       url: route(`/entities/ai-batch-parse`),
       body: { text },
+    });
+  }
+
+  aiSearch(query: string) {
+    return this.http.post<{ query: string }, EntityAISearchResult>({
+      url: route(`/entities/ai-search`),
+      body: { query },
     });
   }
 

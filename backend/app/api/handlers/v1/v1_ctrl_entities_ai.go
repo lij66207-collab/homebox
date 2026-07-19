@@ -165,3 +165,64 @@ func (ctrl *V1Controller) HandleEntityAIBatchParse() errchain.HandlerFunc {
 		return server.JSON(w, http.StatusOK, result)
 	}
 }
+
+// aiSearchRequest is the payload for HandleEntityAISearch.
+type aiSearchRequest struct {
+	Query string `json:"query"`
+}
+
+// HandleEntityAISearch godoc
+//
+//	@Summary		AI Semantic Item Search
+//	@Description	Semantically searches the group's items with the configured AI
+//					provider: the query may be a keyword, category, or loose
+//					description (e.g. "刀子" matches 菜刀/水果刀/瑞士军刀). Returns the
+//					matched items ordered by relevance.
+//	@Tags			Entities
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		aiSearchRequest	true	"Search text"
+//	@Success		200		{object}	services.EntityAISearchResult
+//	@Failure		422		{object}	validate.ErrorResponse
+//	@Failure		502		{object}	validate.ErrorResponse
+//	@Failure		503		{object}	validate.ErrorResponse
+//	@Router			/v1/entities/ai-search [POST]
+//	@Security		Bearer
+func (ctrl *V1Controller) HandleEntityAISearch() errchain.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		spanCtx, span := startEntityCtrlSpan(r.Context(), "controller.V1.HandleEntityAISearch")
+		defer span.End()
+
+		if !ctrl.config.AI.Enabled || ctrl.config.AI.APIKey == "" {
+			return validate.NewRequestError(errors.New("AI photo recognition is not enabled"), http.StatusServiceUnavailable)
+		}
+
+		var req aiSearchRequest
+		if err := server.Decode(r, &req); err != nil {
+			recordCtrlSpanError(span, err)
+			return validate.NewRequestError(err, http.StatusBadRequest)
+		}
+
+		if strings.TrimSpace(req.Query) == "" {
+			return server.JSON(w, http.StatusUnprocessableEntity, validate.NewFieldErrors().Append("query", "query is required"))
+		}
+
+		ctx := services.NewContext(spanCtx)
+		span.SetAttributes(
+			attribute.String("group.id", ctx.GID.String()),
+			attribute.Int("query.length", len(req.Query)),
+		)
+
+		result, err := ctrl.svc.AI.SearchItems(ctx, ctx.GID, req.Query)
+		if err != nil {
+			recordCtrlSpanError(span, err)
+			if errors.Is(err, services.ErrAIDisabled) {
+				return validate.NewRequestError(err, http.StatusServiceUnavailable)
+			}
+			log.Err(err).Msg("ai search failed")
+			return validate.NewRequestError(err, http.StatusBadGateway)
+		}
+
+		return server.JSON(w, http.StatusOK, result)
+	}
+}

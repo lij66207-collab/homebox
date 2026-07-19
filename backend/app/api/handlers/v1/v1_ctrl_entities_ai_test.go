@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +24,9 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	_ "github.com/sysadminsmedia/homebox/backend/pkgs/cgofreesqlite"
 )
+
+// aiTestAPIKey is the fake API key the AI handler tests configure and assert on.
+const aiTestAPIKey = "test-key"
 
 func TestHandleEntityAISuggest_ServiceUnavailableWhenDisabled(t *testing.T) {
 	ctrl := NewControllerV1(nil, nil, nil, &config.Config{})
@@ -69,7 +73,7 @@ func TestHandleEntityAISuggest_HappyPath(t *testing.T) {
 
 	aiConf := config.AIConf{
 		Enabled: true,
-		APIKey:  "test-key",
+		APIKey:  aiTestAPIKey,
 		BaseURL: aiSrv.URL,
 		Model:   "test-model",
 		Timeout: 5 * time.Second,
@@ -111,7 +115,7 @@ func TestHandleEntityAISuggest_HappyPath(t *testing.T) {
 
 func TestHandleEntityAISuggest_RejectsNonImage(t *testing.T) {
 	ctrl := NewControllerV1(nil, nil, nil, &config.Config{
-		AI: config.AIConf{Enabled: true, APIKey: "test-key"},
+		AI: config.AIConf{Enabled: true, APIKey: aiTestAPIKey},
 	})
 
 	var body bytes.Buffer
@@ -153,7 +157,7 @@ func TestHandleEntityAIBatchParse_ServiceUnavailableWhenDisabled(t *testing.T) {
 
 func TestHandleEntityAIBatchParse_RejectsEmptyText(t *testing.T) {
 	ctrl := NewControllerV1(nil, nil, nil, &config.Config{
-		AI: config.AIConf{Enabled: true, APIKey: "test-key"},
+		AI: config.AIConf{Enabled: true, APIKey: aiTestAPIKey},
 	})
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/entities/ai-batch-parse",
@@ -198,7 +202,7 @@ func TestHandleEntityAIBatchParse_HappyPath(t *testing.T) {
 
 	aiConf := config.AIConf{
 		Enabled: true,
-		APIKey:  "test-key",
+		APIKey:  aiTestAPIKey,
 		BaseURL: aiSrv.URL,
 		Model:   "test-model",
 		Timeout: 5 * time.Second,
@@ -228,4 +232,79 @@ func TestHandleEntityAIBatchParse_HappyPath(t *testing.T) {
 
 	assert.Equal(t, "锤子", result.Items[1].Name)
 	assert.Nil(t, result.Items[1].LocationID)
+}
+
+func TestHandleEntityAISearch_ServiceUnavailableWhenDisabled(t *testing.T) {
+	ctrl := NewControllerV1(nil, nil, nil, &config.Config{})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/entities/ai-search", nil)
+	rec := httptest.NewRecorder()
+
+	err := ctrl.HandleEntityAISearch()(rec, req)
+	require.Error(t, err)
+
+	var reqErr *validate.RequestError
+	require.ErrorAs(t, err, &reqErr)
+	assert.Equal(t, http.StatusServiceUnavailable, reqErr.Status)
+}
+
+func TestHandleEntityAISearch_HappyPath(t *testing.T) {
+	ctx := context.Background()
+
+	client, err := ent.Open("sqlite3", "file:aisearchhandler?mode=memory&cache=shared&_fk=1&_time_format=sqlite")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = client.Close() })
+
+	require.NoError(t, client.Schema.Create(ctx))
+
+	bus := eventbus.New()
+	go func() { _ = bus.Run(ctx) }()
+
+	repos := repo.New(client, bus, config.Storage{
+		PrefixPath: "/",
+		ConnString: "file://" + os.TempDir(),
+	}, "mem://{{ .Topic }}", config.Thumbnail{})
+
+	group, err := repos.Groups.GroupCreate(ctx, "ai-search-handler-test-group", uuid.Nil)
+	require.NoError(t, err)
+
+	itemType, err := repos.EntityTypes.GetDefault(ctx, group.ID, false)
+	require.NoError(t, err)
+
+	item, err := repos.Entities.Create(ctx, group.ID, repo.EntityCreate{Name: "菜刀", EntityTypeID: itemType.ID, AssetID: 123})
+	require.NoError(t, err)
+
+	aiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"choices":[{"message":{"role":"assistant","content":"{\"itemIds\":[\"%s\"]}"}}]}`, item.ID.String())
+	}))
+	t.Cleanup(aiSrv.Close)
+
+	aiConf := config.AIConf{
+		Enabled: true,
+		APIKey:  aiTestAPIKey,
+		BaseURL: aiSrv.URL,
+		Model:   "test-model",
+		Timeout: 5 * time.Second,
+	}
+
+	svc := services.New(repos, services.WithAIConfig(&aiConf))
+	ctrl := NewControllerV1(svc, repos, bus, &config.Config{AI: aiConf}, WithMaxUploadSize(10))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/entities/ai-search",
+		bytes.NewBufferString(`{"query":"刀子"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(services.SetTenantCtx(req.Context(), group.ID))
+	rec := httptest.NewRecorder()
+
+	err = ctrl.HandleEntityAISearch()(rec, req)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var result services.EntityAISearchResult
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &result))
+	require.Len(t, result.Items, 1)
+	assert.Equal(t, item.ID, result.Items[0].ID)
+	assert.Equal(t, "菜刀", result.Items[0].Name)
 }

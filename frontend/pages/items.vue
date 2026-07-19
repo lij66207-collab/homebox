@@ -8,6 +8,8 @@
   import MdiLoading from "~icons/mdi/loading";
   import MdiMagnify from "~icons/mdi/magnify";
   import MdiDelete from "~icons/mdi/delete";
+  import MdiCreation from "~icons/mdi/creation";
+  import MdiClose from "~icons/mdi/close";
   import { Button } from "@/components/ui/button";
   import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
   import { Label } from "@/components/ui/label";
@@ -37,6 +39,41 @@
   const loading = useMinLoader(500);
   const items = ref<EntitySummary[]>([]);
   const total = ref(0);
+
+  // AI fuzzy search: feature flag comes from the public status endpoint
+  const pubApi = usePublicApi();
+  const { data: publicStatus } = useAsyncData(async () => {
+    const { data } = await pubApi.status();
+    return data;
+  });
+  const aiEnabled = computed(() => publicStatus.value?.aiEnabled === true);
+  const aiLoading = ref(false);
+  // -1 = not showing AI results; >= 0 = number of AI-returned items on display
+  const aiResultCount = ref(-1);
+
+  async function aiSearch() {
+    const q = query.value.trim();
+    if (!q) return;
+
+    aiLoading.value = true;
+    const { data, error } = await api.items.aiSearch(q);
+    aiLoading.value = false;
+
+    if (error || !data) {
+      toast.error(t("items.ai_search_failed"));
+      return;
+    }
+
+    items.value = data.items ?? [];
+    total.value = items.value.length;
+    aiResultCount.value = items.value.length;
+    initialSearch.value = false;
+  }
+
+  function clearAiResults() {
+    aiResultCount.value = -1;
+    search();
+  }
 
   // Using useRouteQuery directly has two downsides
   // 1. It persists the default value in the query string
@@ -261,6 +298,7 @@
       return;
     }
 
+    aiResultCount.value = -1;
     loading.value = true;
 
     const fields = [];
@@ -401,6 +439,34 @@
           <MdiMagnify v-else />
           {{ $t("global.search") }}
         </Button>
+        <Button
+          v-if="aiEnabled"
+          class="mb-auto h-12 w-full md:w-auto"
+          variant="outline"
+          :disabled="aiLoading || !query.trim()"
+          @click.prevent="aiSearch"
+        >
+          <MdiLoading v-if="aiLoading" class="animate-spin" />
+          <MdiCreation v-else />
+          {{ $t("items.ai_search") }}
+        </Button>
+      </div>
+
+      <!-- AI fuzzy search result notice -->
+      <div
+        v-if="aiResultCount >= 0"
+        class="my-2 flex items-center gap-2 rounded-lg border-l-4 border-l-primary bg-primary/5 p-3 text-sm"
+      >
+        <MdiCreation class="size-4 shrink-0 text-primary" />
+        <span class="flex-1">{{ $t("items.ai_search_banner", { n: aiResultCount }) }}</span>
+        <button
+          type="button"
+          class="text-muted-foreground hover:text-foreground"
+          :aria-label="$t('global.close')"
+          @click="clearAiResults"
+        >
+          <MdiClose class="size-4" />
+        </button>
       </div>
 
       <div class="flex w-full flex-wrap gap-2 py-2 md:flex-nowrap">

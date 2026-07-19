@@ -242,6 +242,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/validate.ErrorResponse"
+  /v1/entities/ai-search:
+    post:
+      security:
+        - Bearer: []
+      description: Semantically searches the group's items with the configured AI
+      tags:
+        - Entities
+      summary: AI Semantic Item Search
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1.aiSearchRequest"
+        description: Search text
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/services.EntityAISearchResult"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
   /v1/entities/ai-suggest:
     post:
       security:
@@ -4291,6 +4331,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/services.EntityAIBatchItem"
+    services.EntityAISearchResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/repo.EntitySummary"
     services.EntityAISuggestion:
       type: object
       properties:
@@ -4542,6 +4589,11 @@ components:
       type: object
       properties:
         text:
+          type: string
+    v1.aiSearchRequest:
+      type: object
+      properties:
+        query:
           type: string
     v1.externalAttachmentRequest:
       type: object

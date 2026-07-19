@@ -40,6 +40,20 @@ const (
 
 	// aiBatchMaxItems caps how many parsed items a single batch returns.
 	aiBatchMaxItems = 100
+
+	// aiSearchMaxCandidates caps how many of the group's items are presented
+	// to the model as search candidates.
+	aiSearchMaxCandidates = 500
+
+	// aiSearchMaxResults caps how many matched items a search returns.
+	aiSearchMaxResults = 100
+
+	// aiSearchMaxQueryLen caps the search text accepted by SearchItems.
+	aiSearchMaxQueryLen = 200
+
+	// maxAIAncestorDepth bounds the parent-chain walk when resolving an
+	// item's location for the search prompt.
+	maxAIAncestorDepth = 64
 )
 
 type AIService struct {
@@ -87,6 +101,12 @@ type EntityAIBatchItem struct {
 // EntityAIBatchResult is the outcome of parsing a batch inventory text.
 type EntityAIBatchResult struct {
 	Items []EntityAIBatchItem `json:"items"`
+}
+
+// EntityAISearchResult is the outcome of an AI semantic item search: the
+// matched items, ordered by the model's relevance ranking.
+type EntityAISearchResult struct {
+	Items []repo.EntitySummary `json:"items"`
 }
 
 // aiCandidate is a single tag or location option presented to the model.
@@ -336,6 +356,93 @@ func (svc *AIService) ParseBatchText(ctx context.Context, groupID uuid.UUID, tex
 	return parseAIBatch(content, candidates.Locations)
 }
 
+// SearchItems performs a semantic search over the group's items: the model
+// picks the matching items from the candidate list (synonyms, categories,
+// loose descriptions — e.g. "刀子" matches 菜刀/水果刀/瑞士军刀), and the
+// matches are returned in the model's relevance order. Unknown ids in the
+// model reply are dropped.
+func (svc *AIService) SearchItems(ctx context.Context, groupID uuid.UUID, query string) (EntityAISearchResult, error) {
+	spanCtx, span := entityServiceTracer().Start(ctx, "service.AIService.SearchItems",
+		trace.WithAttributes(
+			attribute.String("group.id", groupID.String()),
+			attribute.String("ai.model", svc.config.Model),
+			attribute.Int("query.length", len(query)),
+		))
+	defer span.End()
+	ctx = spanCtx
+
+	if !svc.config.Enabled || svc.config.APIKey == "" {
+		return EntityAISearchResult{}, ErrAIDisabled
+	}
+
+	query = strings.TrimSpace(query)
+	if query == "" {
+		err := errors.New("search query is empty")
+		recordServiceSpanError(span, err)
+		return EntityAISearchResult{}, err
+	}
+	if len(query) > aiSearchMaxQueryLen {
+		err := fmt.Errorf("search query exceeds %d characters", aiSearchMaxQueryLen)
+		recordServiceSpanError(span, err)
+		return EntityAISearchResult{}, err
+	}
+
+	all, err := svc.repos.Entities.GetAll(ctx, groupID)
+	if err != nil {
+		recordServiceSpanError(span, err)
+		return EntityAISearchResult{}, err
+	}
+
+	// GetAll does not resolve EntityOut.Location, so walk the parent chains
+	// in memory to find each item's nearest location-type ancestor.
+	byEntityID := make(map[uuid.UUID]*repo.EntityOut, len(all))
+	for i := range all {
+		byEntityID[all[i].ID] = &all[i]
+	}
+	locationOf := func(e *repo.EntityOut) string {
+		for p, depth := e.Parent, 0; p != nil && depth < maxAIAncestorDepth; depth++ {
+			pe, ok := byEntityID[p.ID]
+			if !ok {
+				break
+			}
+			if pe.EntityType != nil && pe.EntityType.IsLocation {
+				return pe.Name
+			}
+			p = pe.Parent
+		}
+		return "-"
+	}
+
+	candidates := make([]aiCandidate, 0, len(all))
+	byID := make(map[string]repo.EntitySummary, len(all))
+	for i := range all {
+		e := &all[i]
+		if e.EntityType != nil && e.EntityType.IsLocation {
+			continue
+		}
+		candidates = append(candidates, aiCandidate{ID: e.ID.String(), Name: e.Name, Path: locationOf(e)})
+		byID[e.ID.String()] = e.EntitySummary
+	}
+
+	if len(candidates) > aiSearchMaxCandidates {
+		err := fmt.Errorf("too many items for ai search: %d exceeds %d", len(candidates), aiSearchMaxCandidates)
+		recordServiceSpanError(span, err)
+		return EntityAISearchResult{}, err
+	}
+	span.SetAttributes(attribute.Int("search.candidates.count", len(candidates)))
+
+	content, err := svc.chat(ctx, []aiChatMessage{
+		{Role: "system", Content: buildAISearchPrompt(candidates)},
+		{Role: "user", Content: query},
+	})
+	if err != nil {
+		recordServiceSpanError(span, err)
+		return EntityAISearchResult{}, err
+	}
+
+	return parseAISearch(content, byID)
+}
+
 // buildAISystemPrompt renders the instruction prompt including the candidate
 // tag/location lists the model must restrict its suggestions to. language is
 // the natural language the suggested name/description must be written in.
@@ -465,6 +572,71 @@ func parseAIBatch(content string, locations []aiCandidate) (EntityAIBatchResult,
 		out.Items = append(out.Items, item)
 		if len(out.Items) >= aiBatchMaxItems {
 			break
+		}
+	}
+
+	return out, nil
+}
+
+// buildAISearchPrompt renders the instruction prompt for semantic item
+// search, listing the group's items (id | name | location) the model must
+// restrict its selection to.
+func buildAISearchPrompt(candidates []aiCandidate) string {
+	var sb strings.Builder
+
+	sb.WriteString(`You are helping search a home-inventory app.
+Given the user's search text and the candidate item list, select ALL items that match the text — including synonyms, category matches, and loose descriptions (e.g. "刀子" matches 菜刀/水果刀/瑞士军刀, "electronics" matches a phone or a laptop).
+Reply with ONLY a JSON object (no markdown, no prose, no code fences) of this exact shape:
+{"itemIds": [string]}
+
+Rules:
+- Only use ids from the candidate list below; never invent ids.
+- Order the ids by relevance, best match first.
+- If nothing matches, reply {"itemIds": []}.
+
+Candidate items (id | name | location):
+`)
+	if len(candidates) == 0 {
+		sb.WriteString("(none)\n")
+	}
+	for _, c := range candidates {
+		fmt.Fprintf(&sb, "- %s | %s | %s\n", c.ID, c.Name, c.Path)
+	}
+
+	return sb.String()
+}
+
+// parseAISearch decodes the model reply for an item search: ids are
+// validated against the candidate set (unknown/duplicate ids dropped) and
+// mapped back to their entity summaries, preserving the model's relevance
+// order.
+func parseAISearch(content string, byID map[string]repo.EntitySummary) (EntityAISearchResult, error) {
+	raw := extractJSONObject(content)
+	if raw == "" {
+		return EntityAISearchResult{}, fmt.Errorf("no JSON object found in ai reply: %q", truncateAIString(content, aiErrorBodySnippet))
+	}
+
+	var parsed struct {
+		ItemIDs []string `json:"itemIds"`
+	}
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		return EntityAISearchResult{}, fmt.Errorf("decoding ai search: %w", err)
+	}
+
+	out := EntityAISearchResult{Items: []repo.EntitySummary{}}
+	seen := make(map[string]struct{}, len(parsed.ItemIDs))
+	for _, id := range parsed.ItemIDs {
+		id = strings.TrimSpace(id)
+		if _, dup := seen[id]; dup {
+			continue
+		}
+		seen[id] = struct{}{}
+
+		if item, ok := byID[id]; ok {
+			out.Items = append(out.Items, item)
+			if len(out.Items) >= aiSearchMaxResults {
+				break
+			}
 		}
 	}
 

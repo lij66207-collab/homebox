@@ -1322,6 +1322,10 @@ export interface EntityAIBatchResult {
   items: EntityAIBatchItem[];
 }
 
+export interface EntityAISearchResult {
+  items: EntitySummary[];
+}
+
 export interface EntityAISuggestion {
   confidence: number;
   description: string;
@@ -1469,6 +1473,10 @@ export interface Wrapped {
 
 export interface AiBatchParseRequest {
   text: string;
+}
+
+export interface AiSearchRequest {
+  query: string;
 }
 
 export interface ExternalAttachmentRequest {

@@ -2140,6 +2140,13 @@ definitions:
           $ref: '#/definitions/services.EntityAIBatchItem'
         type: array
     type: object
+  services.EntityAISearchResult:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/repo.EntitySummary'
+        type: array
+    type: object
   services.EntityAISuggestion:
     properties:
       confidence:
@@ -2388,6 +2395,11 @@ definitions:
   v1.aiBatchParseRequest:
     properties:
       text:
+        type: string
+    type: object
+  v1.aiSearchRequest:
+    properties:
+      query:
         type: string
     type: object
   v1.externalAttachmentRequest:
@@ -2983,6 +2995,42 @@ paths:
       security:
       - Bearer: []
       summary: AI Batch Parse
+      tags:
+      - Entities
+  /v1/entities/ai-search:
+    post:
+      consumes:
+      - application/json
+      description: Semantically searches the group's items with the configured AI
+      parameters:
+      - description: Search text
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.aiSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.EntityAISearchResult'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: AI Semantic Item Search
       tags:
       - Entities
   /v1/entities/ai-suggest:
