@@ -121,14 +121,14 @@ func TestExportRoundTrip(t *testing.T) {
 
 	dstContainerET, err := tRepos.EntityTypes.GetDefault(ctx, dst.ID, true)
 	require.NoError(t, err)
-	for _, name := range []string{"Living Room", defaultLocationGarage, "Kitchen"} {
+	for _, name := range []string{"客厅", defaultLocationGarage, "厨房"} {
 		_, err := tRepos.Entities.Create(ctx, dst.ID, repo.EntityCreate{
 			Name:         name,
 			EntityTypeID: dstContainerET.ID,
 		})
 		require.NoError(t, err)
 	}
-	for _, name := range []string{"Appliances", "Electronics"} {
+	for _, name := range []string{"家电", "电子产品"} {
 		_, err := tRepos.Tags.Create(ctx, dst.ID, repo.TagCreate{Name: name})
 		require.NoError(t, err)
 	}
@@ -341,11 +341,11 @@ func TestIsGroupReadyForImport_BlocksUserCreatedRows(t *testing.T) {
 		require.NoError(t, err)
 		locET, err := tRepos.EntityTypes.GetDefault(ctx, g.ID, true)
 		require.NoError(t, err)
-		for _, name := range []string{"Living Room", defaultLocationGarage, "Kitchen", "Bedroom", "Bathroom", "Office", "Attic", "Basement"} {
+		for _, name := range []string{"客厅", defaultLocationGarage, "厨房", "卧室", "卫生间", "书房", "阁楼", "地下室"} {
 			_, err := tRepos.Entities.Create(ctx, g.ID, repo.EntityCreate{Name: name, EntityTypeID: locET.ID})
 			require.NoError(t, err)
 		}
-		for _, name := range []string{"Appliances", "IOT", "Electronics", "Servers", "General", "Important"} {
+		for _, name := range []string{"家电", "物联网", "电子产品", "服务器", "通用", "重要"} {
 			_, err := tRepos.Tags.Create(ctx, g.ID, repo.TagCreate{Name: name})
 			require.NoError(t, err)
 		}

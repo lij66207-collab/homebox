@@ -7,7 +7,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
 )
 
-const defaultLocationGarage = "Garage"
+const defaultLocationGarage = "车库"
 
 // ensureDefaultEntityTypes guarantees a freshly created group has the two
 // baseline entity types ("Item" and "Location"). The frontend create dialogs
@@ -25,28 +25,28 @@ func ensureDefaultEntityTypes(ctx context.Context, repos *repo.AllRepos, gid uui
 func defaultLocations() []repo.EntityCreate {
 	return []repo.EntityCreate{
 		{
-			Name: "Living Room",
+			Name: "客厅",
 		},
 		{
 			Name: defaultLocationGarage,
 		},
 		{
-			Name: "Kitchen",
+			Name: "厨房",
 		},
 		{
-			Name: "Bedroom",
+			Name: "卧室",
 		},
 		{
-			Name: "Bathroom",
+			Name: "卫生间",
 		},
 		{
-			Name: "Office",
+			Name: "书房",
 		},
 		{
-			Name: "Attic",
+			Name: "阁楼",
 		},
 		{
-			Name: "Basement",
+			Name: "地下室",
 		},
 	}
 }
@@ -54,22 +54,22 @@ func defaultLocations() []repo.EntityCreate {
 func defaultTags() []repo.TagCreate {
 	return []repo.TagCreate{
 		{
-			Name: "Appliances",
+			Name: "家电",
 		},
 		{
-			Name: "IOT",
+			Name: "物联网",
 		},
 		{
-			Name: "Electronics",
+			Name: "电子产品",
 		},
 		{
-			Name: "Servers",
+			Name: "服务器",
 		},
 		{
-			Name: "General",
+			Name: "通用",
 		},
 		{
-			Name: "Important",
+			Name: "重要",
 		},
 	}
 }
