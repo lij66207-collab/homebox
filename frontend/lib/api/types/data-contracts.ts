@@ -1311,6 +1311,17 @@ export interface ValueOverTimeEntry {
   value: number;
 }
 
+export interface EntityAIBatchItem {
+  locationId: string;
+  locationName: string;
+  name: string;
+  quantity: number;
+}
+
+export interface EntityAIBatchResult {
+  items: EntityAIBatchItem[];
+}
+
 export interface EntityAISuggestion {
   confidence: number;
   description: string;
@@ -1454,6 +1465,10 @@ export interface WipeInventoryOptions {
 
 export interface Wrapped {
   item: any;
+}
+
+export interface AiBatchParseRequest {
+  text: string;
 }
 
 export interface ExternalAttachmentRequest {

@@ -2122,6 +2122,24 @@ definitions:
       value:
         type: number
     type: object
+  services.EntityAIBatchItem:
+    properties:
+      locationId:
+        type: string
+      locationName:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: number
+    type: object
+  services.EntityAIBatchResult:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/services.EntityAIBatchItem'
+        type: array
+    type: object
   services.EntityAISuggestion:
     properties:
       confidence:
@@ -2366,6 +2384,11 @@ definitions:
   v1.Wrapped:
     properties:
       item: {}
+    type: object
+  v1.aiBatchParseRequest:
+    properties:
+      text:
+        type: string
     type: object
   v1.externalAttachmentRequest:
     properties:
@@ -2924,6 +2947,42 @@ paths:
       security:
       - Bearer: []
       summary: Get the full path of an entity
+      tags:
+      - Entities
+  /v1/entities/ai-batch-parse:
+    post:
+      consumes:
+      - application/json
+      description: Parses a free-form inventory list (e.g. "物品A在箱子1，物品B在箱子2")
+      parameters:
+      - description: Free-form inventory text
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.aiBatchParseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.EntityAIBatchResult'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: AI Batch Parse
       tags:
       - Entities
   /v1/entities/ai-suggest:

@@ -327,6 +327,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/entities/ai-batch-parse": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Parses a free-form inventory list (e.g. \"物品A在箱子1，物品B在箱子2\")",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entities"
+                ],
+                "summary": "AI Batch Parse",
+                "parameters": [
+                    {
+                        "description": "Free-form inventory text",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.aiBatchParseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.EntityAIBatchResult"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/entities/ai-suggest": {
             "post": {
                 "security": [
@@ -6332,6 +6389,34 @@ const docTemplate = `{
                 }
             }
         },
+        "services.EntityAIBatchItem": {
+            "type": "object",
+            "properties": {
+                "locationId": {
+                    "type": "string"
+                },
+                "locationName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                }
+            }
+        },
+        "services.EntityAIBatchResult": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.EntityAIBatchItem"
+                    }
+                }
+            }
+        },
         "services.EntityAISuggestion": {
             "type": "object",
             "properties": {
@@ -6693,6 +6778,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "item": {}
+            }
+        },
+        "v1.aiBatchParseRequest": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                }
             }
         },
         "v1.externalAttachmentRequest": {

@@ -24,6 +24,24 @@
             </TooltipContent>
           </Tooltip>
 
+          <!-- Batch mode toggle (AI text parse) -->
+          <Tooltip v-if="aiEnabled && !selectedEntityType?.isLocation">
+            <TooltipTrigger>
+              <Button
+                :variant="batchMode ? 'default' : 'outline'"
+                :disabled="loading"
+                size="icon"
+                :aria-label="$t('components.entity.create_modal.batch_mode')"
+                @click="toggleBatchMode"
+              >
+                <MdiPlaylistPlus class="size-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ $t("components.entity.create_modal.batch_mode_tooltip") }}</p>
+            </TooltipContent>
+          </Tooltip>
+
           <ButtonGroup>
             <Tooltip>
               <TooltipTrigger>
@@ -50,7 +68,7 @@
       </div>
     </template>
 
-    <form class="flex min-w-0 flex-col gap-2" @submit.prevent="create()">
+    <form v-if="!batchMode" class="flex min-w-0 flex-col gap-2" @submit.prevent="create()">
       <LocationSelector v-model="form.location" />
 
       <!-- AI suggestion banner - shown after a photo analysis pre-fills the form -->
@@ -257,6 +275,54 @@
         @set-primary="setPrimaryPhotoAt"
       />
     </form>
+
+    <!-- Batch creation mode: paste a free-form list, let AI parse it, review, create all -->
+    <div v-if="batchMode" class="flex min-w-0 flex-col gap-3">
+      <p class="text-sm text-muted-foreground">{{ $t("components.entity.create_modal.batch_hint") }}</p>
+      <FormTextArea
+        v-model="batchText"
+        :label="$t('components.entity.create_modal.batch_input_label')"
+        :placeholder="$t('components.entity.create_modal.batch_placeholder')"
+        :max-length="4000"
+      />
+      <div class="flex justify-end">
+        <Button type="button" variant="outline" :disabled="batchParsing || !batchText.trim()" @click="parseBatch">
+          <MdiLoading v-if="batchParsing" class="size-4 animate-spin" />
+          <MdiCreation v-else class="size-4" />
+          {{ $t("components.entity.create_modal.batch_parse") }}
+        </Button>
+      </div>
+
+      <div v-if="batchParsed" class="flex flex-col gap-2">
+        <div v-for="(row, idx) in batchRows" :key="idx" class="flex items-center gap-2">
+          <Input v-model="row.name" class="grow" :aria-label="$t('components.entity.create_modal.batch_col_name')" />
+          <Input v-model.number="row.quantity" type="number" min="1" class="w-20" />
+          <select v-model="row.locationId" class="h-9 max-w-32 truncate rounded-md border bg-background px-2 text-sm">
+            <option :value="null">{{ $t("components.entity.create_modal.batch_no_location") }}</option>
+            <option v-for="loc in locations" :key="loc.id" :value="loc.id">{{ loc.name }}</option>
+          </select>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            :aria-label="$t('components.entity.create_modal.batch_remove_row')"
+            @click="removeBatchRow(idx)"
+          >
+            <MdiClose class="size-4" />
+          </Button>
+        </div>
+        <p v-if="batchRows.some(r => r.locationName && !r.locationId)" class="text-sm text-muted-foreground">
+          {{ $t("components.entity.create_modal.batch_unmatched_hint") }}
+        </p>
+
+        <div class="mt-2 flex flex-row-reverse">
+          <Button type="button" :disabled="batchCreating || batchRows.length === 0" @click="createBatch">
+            <MdiLoading v-if="batchCreating" class="size-4 animate-spin" />
+            {{ $t("components.entity.create_modal.batch_create", { n: batchRows.length }) }}
+          </Button>
+        </div>
+      </div>
+    </div>
   </BaseModal>
 </template>
 
@@ -284,12 +350,14 @@
   import MdiClose from "~icons/mdi/close";
   import MdiCreation from "~icons/mdi/creation";
   import MdiLoading from "~icons/mdi/loading";
+  import MdiPlaylistPlus from "~icons/mdi/playlist-plus";
   import { AttachmentTypes } from "~~/lib/api/types/non-generated";
   import { useDialog, useDialogHotkey } from "~/components/ui/dialog-provider";
   import TagSelector from "~/components/Tag/Selector.vue";
   import ItemSelector from "~/components/Item/Selector.vue";
   import TemplateSelector from "~/components/Template/Selector.vue";
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+  import { Input } from "~/components/ui/input";
   import LocationSelector from "~/components/Location/Selector.vue";
   import FormTextField from "~/components/Form/TextField.vue";
   import FormTextArea from "~/components/Form/TextArea.vue";
@@ -365,6 +433,99 @@
     // Attach the photo that was just analyzed
     appendPhotos(await filesToPhotoPreviews([file], form.photos.length));
     aiBanner.value = true;
+  }
+
+  // Batch creation: free-form text parsed by AI into structured rows, reviewed
+  // in an editable table, then created one by one through the normal endpoint.
+  interface BatchRow {
+    name: string;
+    quantity: number;
+    locationId: string | null;
+    locationName: string;
+  }
+
+  const batchMode = ref(false);
+  const batchText = ref("");
+  const batchParsing = ref(false);
+  const batchParsed = ref(false);
+  const batchCreating = ref(false);
+  const batchRows = ref<BatchRow[]>([]);
+
+  const batchItemType = computed(() => entityTypes.value.find(t => !t.isLocation) ?? null);
+
+  function toggleBatchMode() {
+    batchMode.value = !batchMode.value;
+    if (!batchMode.value) {
+      batchParsed.value = false;
+    }
+  }
+
+  async function parseBatch() {
+    const text = batchText.value.trim();
+    if (!text) return;
+
+    batchParsing.value = true;
+    const { data, error } = await api.items.aiBatchParse(text);
+    batchParsing.value = false;
+
+    if (error || !data) {
+      toast.error(t("components.entity.create_modal.toast.ai_suggest_failed"));
+      return;
+    }
+
+    batchRows.value = (data.items ?? []).map(i => ({
+      name: i.name,
+      quantity: i.quantity && i.quantity > 0 ? i.quantity : 1,
+      locationId: i.locationId || null,
+      locationName: i.locationName || "",
+    }));
+    batchParsed.value = true;
+
+    if (batchRows.value.length === 0) {
+      toast.error(t("components.entity.create_modal.toast.batch_empty"));
+    }
+  }
+
+  function removeBatchRow(idx: number) {
+    batchRows.value.splice(idx, 1);
+  }
+
+  async function createBatch() {
+    const et = batchItemType.value;
+    if (!et || batchRows.value.length === 0) return;
+
+    batchCreating.value = true;
+    let done = 0;
+    let failed = 0;
+    for (const row of batchRows.value) {
+      const name = row.name.trim();
+      if (!name) {
+        failed++;
+        continue;
+      }
+      const { error } = await api.items.create({
+        name,
+        description: "",
+        parentId: row.locationId || null,
+        quantity: row.quantity >= 1 ? row.quantity : 1,
+        tagIds: [],
+        entityTypeId: et.id,
+      });
+      if (error) failed++;
+      else done++;
+    }
+    batchCreating.value = false;
+
+    if (failed === 0) {
+      toast.success(t("components.entity.create_modal.toast.batch_created", { n: done }));
+      batchMode.value = false;
+      batchText.value = "";
+      batchRows.value = [];
+      batchParsed.value = false;
+      closeDialog(DialogID.CreateEntity);
+    } else {
+      toast.error(t("components.entity.create_modal.toast.batch_partial", { done, failed }));
+    }
   }
 
   const locationsStore = useLocationStore();

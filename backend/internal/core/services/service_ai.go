@@ -34,6 +34,12 @@ const (
 	// aiErrorBodySnippet is how much of a non-2xx response body is included
 	// in the returned error.
 	aiErrorBodySnippet = 256
+
+	// aiBatchMaxTextLen caps the free-form text accepted by ParseBatchText.
+	aiBatchMaxTextLen = 4000
+
+	// aiBatchMaxItems caps how many parsed items a single batch returns.
+	aiBatchMaxItems = 100
 )
 
 type AIService struct {
@@ -65,6 +71,22 @@ type EntityAISuggestion struct {
 	SuggestedTagIDs     []string `json:"suggestedTagIds"`
 	SuggestedLocationID *string  `json:"suggestedLocationId"`
 	Confidence          float64  `json:"confidence"`
+}
+
+// EntityAIBatchItem is one parsed entry from a free-form batch inventory
+// text. LocationID is set only when the location named in the text matches an
+// existing location in the acting user's group; LocationName echoes what the
+// text said (empty when the text named no location).
+type EntityAIBatchItem struct {
+	Name         string  `json:"name"`
+	Quantity     float64 `json:"quantity"`
+	LocationID   *string `json:"locationId"`
+	LocationName string  `json:"locationName"`
+}
+
+// EntityAIBatchResult is the outcome of parsing a batch inventory text.
+type EntityAIBatchResult struct {
+	Items []EntityAIBatchItem `json:"items"`
 }
 
 // aiCandidate is a single tag or location option presented to the model.
@@ -202,37 +224,48 @@ func (svc *AIService) loadCandidates(ctx context.Context, gid uuid.UUID) (aiCand
 }
 
 func (svc *AIService) suggest(ctx context.Context, candidates aiCandidates, image []byte, mimeType string) (EntityAISuggestion, error) {
-	payload, err := json.Marshal(aiChatRequest{
-		Model: svc.config.Model,
-		Messages: []aiChatMessage{
-			{Role: "system", Content: buildAISystemPrompt(candidates, svc.config.Language)},
-			{Role: "user", Content: []aiContentPart{
-				{Type: "text", Text: "Analyze this photo of a household item and reply with the JSON object described in the system instructions."},
-				{Type: "image_url", ImageURL: &aiImageURL{URL: "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(image)}},
-			}},
-		},
+	content, err := svc.chat(ctx, []aiChatMessage{
+		{Role: "system", Content: buildAISystemPrompt(candidates, svc.config.Language)},
+		{Role: "user", Content: []aiContentPart{
+			{Type: "text", Text: "Analyze this photo of a household item and reply with the JSON object described in the system instructions."},
+			{Type: "image_url", ImageURL: &aiImageURL{URL: "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(image)}},
+		}},
 	})
 	if err != nil {
-		return EntityAISuggestion{}, fmt.Errorf("marshaling ai request: %w", err)
+		return EntityAISuggestion{}, err
+	}
+
+	return parseAISuggestion(content, candidates)
+}
+
+// chat sends a chat-completions request to the configured OpenAI-compatible
+// endpoint and returns the first choice's message content.
+func (svc *AIService) chat(ctx context.Context, messages []aiChatMessage) (string, error) {
+	payload, err := json.Marshal(aiChatRequest{
+		Model:    svc.config.Model,
+		Messages: messages,
+	})
+	if err != nil {
+		return "", fmt.Errorf("marshaling ai request: %w", err)
 	}
 
 	endpoint := strings.TrimSuffix(svc.config.BaseURL, "/") + "/chat/completions"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payload))
 	if err != nil {
-		return EntityAISuggestion{}, fmt.Errorf("building ai request: %w", err)
+		return "", fmt.Errorf("building ai request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+svc.config.APIKey)
 
 	resp, err := svc.client.Do(req)
 	if err != nil {
-		return EntityAISuggestion{}, fmt.Errorf("ai request failed: %w", err)
+		return "", fmt.Errorf("ai request failed: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, aiMaxResponseBytes))
 	if err != nil {
-		return EntityAISuggestion{}, fmt.Errorf("reading ai response: %w", err)
+		return "", fmt.Errorf("reading ai response: %w", err)
 	}
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
@@ -240,19 +273,67 @@ func (svc *AIService) suggest(ctx context.Context, candidates aiCandidates, imag
 		if len(snippet) > aiErrorBodySnippet {
 			snippet = snippet[:aiErrorBodySnippet] + "..."
 		}
-		return EntityAISuggestion{}, fmt.Errorf("ai endpoint returned status %d: %s", resp.StatusCode, snippet)
+		return "", fmt.Errorf("ai endpoint returned status %d: %s", resp.StatusCode, snippet)
 	}
 
 	var chatResp aiChatResponse
 	if err := json.Unmarshal(body, &chatResp); err != nil {
-		return EntityAISuggestion{}, fmt.Errorf("decoding ai response: %w", err)
+		return "", fmt.Errorf("decoding ai response: %w", err)
 	}
 
 	if len(chatResp.Choices) == 0 {
-		return EntityAISuggestion{}, errors.New("ai endpoint returned no choices")
+		return "", errors.New("ai endpoint returned no choices")
 	}
 
-	return parseAISuggestion(chatResp.Choices[0].Message.Content, candidates)
+	return chatResp.Choices[0].Message.Content, nil
+}
+
+// ParseBatchText parses a free-form inventory list (e.g. "物品A在箱子1，物品B
+// 在箱子2") into structured batch items with the configured chat model.
+// Locations are matched against the group's existing locations by name;
+// unmatched names keep LocationName but get a nil LocationID.
+func (svc *AIService) ParseBatchText(ctx context.Context, groupID uuid.UUID, text string) (EntityAIBatchResult, error) {
+	spanCtx, span := entityServiceTracer().Start(ctx, "service.AIService.ParseBatchText",
+		trace.WithAttributes(
+			attribute.String("group.id", groupID.String()),
+			attribute.String("ai.model", svc.config.Model),
+			attribute.Int("text.length", len(text)),
+		))
+	defer span.End()
+	ctx = spanCtx
+
+	if !svc.config.Enabled || svc.config.APIKey == "" {
+		return EntityAIBatchResult{}, ErrAIDisabled
+	}
+
+	text = strings.TrimSpace(text)
+	if text == "" {
+		err := errors.New("batch text is empty")
+		recordServiceSpanError(span, err)
+		return EntityAIBatchResult{}, err
+	}
+	if len(text) > aiBatchMaxTextLen {
+		err := fmt.Errorf("batch text exceeds %d characters", aiBatchMaxTextLen)
+		recordServiceSpanError(span, err)
+		return EntityAIBatchResult{}, err
+	}
+
+	candidates, err := svc.loadCandidates(ctx, groupID)
+	if err != nil {
+		recordServiceSpanError(span, err)
+		return EntityAIBatchResult{}, err
+	}
+
+	content, err := svc.chat(ctx, []aiChatMessage{
+		{Role: "system", Content: buildAIBatchPrompt(candidates.Locations, svc.config.Language)},
+		{Role: "user", Content: text},
+	})
+	if err != nil {
+		recordServiceSpanError(span, err)
+		return EntityAIBatchResult{}, err
+	}
+
+	return parseAIBatch(content, candidates.Locations)
 }
 
 // buildAISystemPrompt renders the instruction prompt including the candidate
@@ -295,6 +376,99 @@ Candidate tags (id: name):
 	}
 
 	return sb.String()
+}
+
+// buildAIBatchPrompt renders the instruction prompt for parsing a free-form
+// batch inventory text. The model must restrict location names to the
+// candidate list (matched back to ids server-side).
+func buildAIBatchPrompt(locations []aiCandidate, language string) string {
+	if language == "" {
+		language = "English"
+	}
+
+	var sb strings.Builder
+
+	sb.WriteString(`You are parsing a free-form inventory list for a home-inventory app.
+The user text names household items and may say which location each item belongs to.
+Reply with ONLY a JSON object (no markdown, no prose, no code fences) of this exact shape:
+{"items":[{"name": string, "quantity": number, "location": string|null}]}
+
+Rules:
+- Split the text into individual items; one array entry per item.
+- "name" is a short item name in ` + language + `.
+- "quantity" is the count for that item; use 1 when unspecified; never below 1.
+- "location" must be copied EXACTLY from the candidate location names below, or null when the text names no location or no candidate fits.
+- Do not invent items that are not mentioned in the text.
+
+Candidate locations:
+`)
+	if len(locations) == 0 {
+		sb.WriteString("(none)\n")
+	}
+	for _, l := range locations {
+		fmt.Fprintf(&sb, "- %s\n", l.Name)
+	}
+
+	return sb.String()
+}
+
+// parseAIBatch decodes the model reply for a batch parse and validates it
+// against the candidate locations: names are trimmed, empty entries dropped,
+// quantity clamped to >= 1, and location names resolved to ids
+// case-insensitively. Unmatched locations keep their echoed name only.
+func parseAIBatch(content string, locations []aiCandidate) (EntityAIBatchResult, error) {
+	raw := extractJSONObject(content)
+	if raw == "" {
+		return EntityAIBatchResult{}, fmt.Errorf("no JSON object found in ai reply: %q", truncateAIString(content, aiErrorBodySnippet))
+	}
+
+	var parsed struct {
+		Items []struct {
+			Name     string   `json:"name"`
+			Quantity *float64 `json:"quantity"`
+			Location *string  `json:"location"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		return EntityAIBatchResult{}, fmt.Errorf("decoding ai batch: %w", err)
+	}
+
+	lookup := make(map[string]string, len(locations))
+	for _, l := range locations {
+		key := strings.ToLower(strings.TrimSpace(l.Name))
+		if _, ok := lookup[key]; !ok {
+			lookup[key] = l.ID
+		}
+	}
+
+	out := EntityAIBatchResult{Items: []EntityAIBatchItem{}}
+	for _, it := range parsed.Items {
+		name := strings.TrimSpace(it.Name)
+		if name == "" {
+			continue
+		}
+
+		item := EntityAIBatchItem{Name: name, Quantity: 1}
+		if it.Quantity != nil && *it.Quantity >= 1 {
+			item.Quantity = *it.Quantity
+		}
+
+		if it.Location != nil {
+			locName := strings.TrimSpace(*it.Location)
+			item.LocationName = locName
+			if id, ok := lookup[strings.ToLower(locName)]; ok {
+				locID := id
+				item.LocationID = &locID
+			}
+		}
+
+		out.Items = append(out.Items, item)
+		if len(out.Items) >= aiBatchMaxItems {
+			break
+		}
+	}
+
+	return out, nil
 }
 
 // extractJSONObject leniently extracts the first complete {...} block from a

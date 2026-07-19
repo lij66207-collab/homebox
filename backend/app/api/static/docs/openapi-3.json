@@ -341,6 +341,73 @@
                 }
             }
         },
+        "/v1/entities/ai-batch-parse": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Parses a free-form inventory list (e.g. \"物品A在箱子1，物品B在箱子2\")",
+                "tags": [
+                    "Entities"
+                ],
+                "summary": "AI Batch Parse",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/v1.aiBatchParseRequest"
+                            }
+                        }
+                    },
+                    "description": "Free-form inventory text",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/services.EntityAIBatchResult"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/validate.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/validate.ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/validate.ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/entities/ai-suggest": {
             "post": {
                 "security": [
@@ -6592,6 +6659,34 @@
                     }
                 }
             },
+            "services.EntityAIBatchItem": {
+                "type": "object",
+                "properties": {
+                    "locationId": {
+                        "type": "string"
+                    },
+                    "locationName": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "number"
+                    }
+                }
+            },
+            "services.EntityAIBatchResult": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/services.EntityAIBatchItem"
+                        }
+                    }
+                }
+            },
             "services.EntityAISuggestion": {
                 "type": "object",
                 "properties": {
@@ -6953,6 +7048,14 @@
                 "type": "object",
                 "properties": {
                     "item": {}
+                }
+            },
+            "v1.aiBatchParseRequest": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string"
+                    }
                 }
             },
             "v1.externalAttachmentRequest": {

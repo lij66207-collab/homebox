@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -293,4 +294,71 @@ func TestExtractJSONObject(t *testing.T) {
 			assert.Equal(t, tc.want, extractJSONObject(tc.input))
 		})
 	}
+}
+
+func TestAIService_ParseBatchText_HappyPath(t *testing.T) {
+	ctx := context.Background()
+
+	loc, err := tRepos.Entities.CreateContainer(ctx, tGroup.ID, repo.EntityCreate{Name: "batch-loc-" + fk.Str(6)})
+	require.NoError(t, err)
+
+	reply := aiReplyJSON(t, fmt.Sprintf(
+		`{"items":[`+
+			`{"name":"螺丝刀","quantity":2,"location":%q},`+
+			`{"name":"卷尺","quantity":1,"location":%q},`+
+			`{"name":"锤子","quantity":null,"location":null},`+
+			`{"name":"扳手","quantity":1,"location":"不存在的箱子"},`+
+			`{"name":"  ","quantity":1,"location":null}`+
+			`]}`,
+		loc.Name, strings.ToUpper(loc.Name)))
+
+	capture := &capturedAIRequest{}
+	srv := newMockAIServer(t, http.StatusOK, reply, capture)
+	svc := newTestAIService(srv.URL+"/v1", 5*time.Second)
+
+	result, err := svc.ParseBatchText(ctx, tGroup.ID, "螺丝刀两个、卷尺一个都在"+loc.Name+"，锤子一把，扳手在不存在的箱子")
+	require.NoError(t, err)
+	require.Len(t, result.Items, 4, "blank-name entry should be dropped")
+
+	assert.Equal(t, "螺丝刀", result.Items[0].Name)
+	assert.InDelta(t, 2.0, result.Items[0].Quantity, 0.0001)
+	require.NotNil(t, result.Items[0].LocationID)
+	assert.Equal(t, loc.ID.String(), *result.Items[0].LocationID)
+	assert.Equal(t, loc.Name, result.Items[0].LocationName)
+
+	assert.Equal(t, "卷尺", result.Items[1].Name)
+	require.NotNil(t, result.Items[1].LocationID, "location match must be case-insensitive")
+	assert.Equal(t, loc.ID.String(), *result.Items[1].LocationID)
+
+	assert.Equal(t, "锤子", result.Items[2].Name)
+	assert.InDelta(t, 1.0, result.Items[2].Quantity, 0.0001, "null quantity defaults to 1")
+	assert.Nil(t, result.Items[2].LocationID)
+
+	assert.Equal(t, "扳手", result.Items[3].Name)
+	assert.Nil(t, result.Items[3].LocationID, "unknown location must not resolve")
+	assert.Equal(t, "不存在的箱子", result.Items[3].LocationName)
+
+	assert.Contains(t, capture.system, loc.Name, "system prompt should list candidate location names")
+	assert.Equal(t, "Bearer test-api-key", capture.authHeader)
+}
+
+func TestAIService_ParseBatchText_EmptyText(t *testing.T) {
+	svc := newTestAIService("http://unused.invalid", 5*time.Second)
+	_, err := svc.ParseBatchText(context.Background(), tGroup.ID, "   ")
+	require.ErrorContains(t, err, "empty")
+}
+
+func TestAIService_ParseBatchText_MalformedReply(t *testing.T) {
+	capture := &capturedAIRequest{}
+	srv := newMockAIServer(t, http.StatusOK, aiReplyJSON(t, "no json here"), capture)
+	svc := newTestAIService(srv.URL, 5*time.Second)
+
+	_, err := svc.ParseBatchText(context.Background(), tGroup.ID, "物品A在箱子1")
+	require.ErrorContains(t, err, "no JSON object")
+}
+
+func TestAIService_ParseBatchText_Disabled(t *testing.T) {
+	svc := NewAIService(tRepos, config.AIConf{})
+	_, err := svc.ParseBatchText(context.Background(), tGroup.ID, "物品A在箱子1")
+	assert.ErrorIs(t, err, ErrAIDisabled)
 }
