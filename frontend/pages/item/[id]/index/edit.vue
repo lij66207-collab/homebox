@@ -505,7 +505,7 @@
   function addField() {
     item.value.fields.push({
       id: null,
-      name: "Field Name",
+      name: t("components.template.form.field_name"),
       type: "text",
       textValue: "",
       numberValue: 0,

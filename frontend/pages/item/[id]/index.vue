@@ -784,13 +784,23 @@
               <div class="flex items-center">
                 {{ detail.text }}
                 <span
-                  class="my-0 ml-4 inline-flex gap-2 opacity-10 transition-opacity duration-75 group-hover:opacity-100"
+                  class="my-0 ml-4 inline-flex gap-2 opacity-10 transition-opacity duration-75 group-hover:opacity-100 max-sm:opacity-100"
                 >
-                  <Button size="icon" variant="outline" class="size-8 rounded-full" @click="adjustQuantity(-1)">
-                    <MdiMinus class="size-3" />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    class="size-8 rounded-full max-sm:size-10"
+                    @click="adjustQuantity(-1)"
+                  >
+                    <MdiMinus class="size-3 max-sm:size-4" />
                   </Button>
-                  <Button size="icon" variant="outline" class="size-8 rounded-full" @click="adjustQuantity(1)">
-                    <MdiPlus class="size-3" />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    class="size-8 rounded-full max-sm:size-10"
+                    @click="adjustQuantity(1)"
+                  >
+                    <MdiPlus class="size-3 max-sm:size-4" />
                   </Button>
                 </span>
               </div>
@@ -806,7 +816,7 @@
               <button v-for="(img, i) in photos" :key="i" @click="openImageDialog(img, item.id)">
                 <picture>
                   <source :srcset="img.originalSrc" :type="img.originalType" />
-                  <img class="max-h-[200px] rounded" :src="img.thumbnailSrc" alt="attachment image" />
+                  <img class="max-h-[200px] rounded" :src="img.thumbnailSrc" :alt="$t('items.attachment_image')" />
                 </picture>
               </button>
             </div>

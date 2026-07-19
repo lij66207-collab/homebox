@@ -81,7 +81,7 @@
         <source :srcset="image.originalSrc" :type="image.originalType" />
         <img
           :src="image.thumbnailSrc"
-          alt="attachment image"
+          :alt="t('items.attachment_image')"
           class="min-w-64 max-w-[min(calc(100vw_-_1rem),32rem)] md:w-auto md:max-w-lg"
         />
       </picture>

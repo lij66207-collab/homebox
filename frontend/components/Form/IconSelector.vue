@@ -1,7 +1,10 @@
 <script setup lang="ts">
   import { Label } from "~/components/ui/label";
   import { Button } from "~/components/ui/button";
+  import { useI18n } from "vue-i18n";
   import { availableIcons } from "~/lib/icons";
+
+  const { t } = useI18n();
 
   const props = defineProps({
     modelValue: {
@@ -45,7 +48,7 @@
           :variant="value === icon.name ? 'default' : 'outline'"
           size="sm"
           class="flex size-10 items-center justify-center p-0"
-          :aria-label="`Select ${icon.name} icon`"
+          :aria-label="t('components.form.icon_selector.select_icon', { name: icon.name })"
           @click="selectIcon(icon.name)"
         >
           <component :is="icon.component" class="size-5" />

@@ -159,7 +159,7 @@
     <DropdownMenuTrigger as-child>
       <Button
         :variant="view === 'table' ? 'ghost' : 'outline'"
-        class="size-8 p-0 hover:bg-primary hover:text-primary-foreground"
+        class="size-8 p-0 hover:bg-primary hover:text-primary-foreground max-sm:size-10"
       >
         <span class="sr-only">{{ t("components.item.view.table.dropdown.open_menu") }}</span>
         <MoreHorizontal class="size-4" />
