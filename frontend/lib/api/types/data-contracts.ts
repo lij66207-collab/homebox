@@ -1311,6 +1311,15 @@ export interface ValueOverTimeEntry {
   value: number;
 }
 
+export interface EntityAISuggestion {
+  confidence: number;
+  description: string;
+  name: string;
+  quantity: number;
+  suggestedLocationId: string;
+  suggestedTagIds: string[];
+}
+
 export interface Latest {
   date: Date | string;
   version: string;
@@ -1324,6 +1333,7 @@ export interface UserRegistration {
 }
 
 export interface APISummary {
+  aiEnabled: boolean;
   allowRegistration: boolean;
   build: Build;
   demo: boolean;

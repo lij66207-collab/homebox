@@ -2,7 +2,7 @@
   <BaseModal :dialog-id="DialogID.CreateEntity">
     <template #title>
       <div class="flex items-center gap-2 text-nowrap">
-        <span>Create</span>
+        <span>{{ $t("global.create") }}</span>
         <EntitySelector
           :selected-entity-type="selectedEntityType?.id"
           :entity-types="subItemCreate ? entityTypes.filter(t => !t.isLocation) : entityTypes"
@@ -52,6 +52,23 @@
 
     <form class="flex min-w-0 flex-col gap-2" @submit.prevent="create()">
       <LocationSelector v-model="form.location" />
+
+      <!-- AI suggestion banner - shown after a photo analysis pre-fills the form -->
+      <div
+        v-if="aiBanner"
+        class="flex items-start gap-2 rounded-lg border-l-4 border-l-primary bg-primary/5 p-3 text-sm"
+      >
+        <MdiCreation class="mt-0.5 size-4 shrink-0 text-primary" />
+        <span class="flex-1">{{ $t("components.entity.create_modal.ai_suggest_banner") }}</span>
+        <button
+          type="button"
+          class="text-muted-foreground hover:text-foreground"
+          :aria-label="$t('global.close')"
+          @click="aiBanner = false"
+        >
+          <MdiClose class="size-4" />
+        </button>
+      </div>
 
       <!-- Template Info Display - Collapsible banner with distinct styling -->
       <div v-if="templateData" class="rounded-lg border-l-4 border-l-primary bg-primary/5 p-3">
@@ -184,16 +201,36 @@
         :max-length="1000"
       />
       <TagSelector v-model="form.tags" :tags="tags ?? []" />
-      <PhotoUploader
-        :label="
-          $t('components.entity.create_modal.entity_photo', {
-            type: t(selectedEntityType ? selectedEntityType.name : 'global.entity'),
-          })
-        "
-        :button-label="$t('components.entity.create_modal.upload_photos')"
-        :existing-count="form.photos.length"
-        @selected="appendPhotos"
-      />
+      <div class="flex items-end gap-2">
+        <PhotoUploader
+          class="grow"
+          :label="
+            $t('components.entity.create_modal.entity_photo', {
+              type: t(selectedEntityType ? selectedEntityType.name : 'global.entity'),
+            })
+          "
+          :button-label="$t('components.entity.create_modal.upload_photos')"
+          :existing-count="form.photos.length"
+          @selected="appendPhotos"
+        />
+        <TooltipProvider v-if="aiEnabled && !selectedEntityType?.isLocation" :delay-duration="0">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span>
+                <Button type="button" variant="outline" :disabled="aiLoading || loading" @click="openAiPicker">
+                  <MdiLoading v-if="aiLoading" class="size-4 animate-spin" />
+                  <MdiCreation v-else class="size-4" />
+                  {{ $t("components.entity.create_modal.ai_suggest") }}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ $t("components.entity.create_modal.ai_suggest_tooltip") }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <input ref="aiInput" class="hidden" type="file" accept="image/*" capture="environment" @change="onAiPhoto" />
+      </div>
       <div class="mt-4 flex flex-row-reverse">
         <ButtonGroup>
           <Button :disabled="loading" type="submit" class="group">
@@ -245,6 +282,8 @@
   import MdiFileDocumentOutline from "~icons/mdi/file-document-outline";
   import MdiChevronDown from "~icons/mdi/chevron-down";
   import MdiClose from "~icons/mdi/close";
+  import MdiCreation from "~icons/mdi/creation";
+  import MdiLoading from "~icons/mdi/loading";
   import { AttachmentTypes } from "~~/lib/api/types/non-generated";
   import { useDialog, useDialogHotkey } from "~/components/ui/dialog-provider";
   import TagSelector from "~/components/Tag/Selector.vue";
@@ -259,6 +298,7 @@
   import {
     deletePhoto,
     dataURLtoFile,
+    filesToPhotoPreviews,
     rotatePhotoPreview,
     setPrimaryPhoto,
     type PhotoPreview,
@@ -279,6 +319,53 @@
   const entityTypeStore = useEntityTypeStore();
 
   const api = useUserApi();
+
+  // AI photo recognition: the feature flag is exposed on the public status endpoint
+  const pubApi = usePublicApi();
+  const { data: publicStatus } = useAsyncData(async () => {
+    const { data } = await pubApi.status();
+    return data;
+  });
+  const aiEnabled = computed(() => publicStatus.value?.aiEnabled === true);
+
+  const aiInput = ref<HTMLInputElement | null>(null);
+  const aiLoading = ref(false);
+  const aiBanner = ref(false);
+
+  function openAiPicker() {
+    aiInput.value?.click();
+  }
+
+  async function onAiPhoto(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    aiLoading.value = true;
+    const { data, error } = await api.items.aiSuggest(file);
+    aiLoading.value = false;
+
+    if (error || !data) {
+      toast.error(t("components.entity.create_modal.toast.ai_suggest_failed"));
+      return;
+    }
+
+    if (data.name) form.name = data.name;
+    if (data.description) form.description = data.description;
+    if (data.quantity && data.quantity > 0) form.quantity = data.quantity;
+    if (data.suggestedTagIds && data.suggestedTagIds.length > 0) {
+      form.tags = [...new Set([...form.tags, ...data.suggestedTagIds])];
+    }
+    if (data.suggestedLocationId) {
+      const found = locations.value.find(l => l.id === data.suggestedLocationId);
+      if (found) form.location = found;
+    }
+
+    // Attach the photo that was just analyzed
+    appendPhotos(await filesToPhotoPreviews([file], form.photos.length));
+    aiBanner.value = true;
+  }
 
   const locationsStore = useLocationStore();
   const locations = computed(() => locationsStore.allLocations);
@@ -715,6 +802,7 @@
     templateData.value = null;
     templateUserSelected.value = false;
     showTemplateDetails.value = false;
+    aiBanner.value = false;
     focused.value = false;
     loading.value = false;
 

@@ -5,17 +5,38 @@
         {{ label }}
       </Label>
 
-      <div class="relative inline-block">
-        <Button type="button" variant="outline" class="w-full" aria-hidden="true" @click.prevent="openFilePicker">
-          {{ buttonLabel }}
+      <div class="flex gap-2">
+        <div class="relative inline-block grow">
+          <Button type="button" variant="outline" class="w-full" aria-hidden="true" @click.prevent="openFilePicker">
+            {{ buttonLabel }}
+          </Button>
+          <Input
+            id="photo-uploader"
+            ref="fileInput"
+            class="absolute left-0 top-0 size-full cursor-pointer opacity-0"
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/avif,image/webp,android/force-camera-workaround"
+            multiple
+            @change="onFilesSelected"
+          />
+        </div>
+        <!-- Direct camera capture entry, shown on small (mobile) screens only -->
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          class="shrink-0 sm:hidden"
+          :aria-label="t('components.entity.create_modal.take_photo')"
+          @click.prevent="openCameraPicker"
+        >
+          <MdiCamera class="size-5" />
         </Button>
-        <Input
-          id="photo-uploader"
-          ref="fileInput"
-          class="absolute left-0 top-0 size-full cursor-pointer opacity-0"
+        <input
+          ref="cameraInput"
+          class="hidden"
           type="file"
-          accept="image/png,image/jpeg,image/gif,image/avif,image/webp,android/force-camera-workaround"
-          multiple
+          accept="image/png,image/jpeg,image/webp"
+          capture="environment"
           @change="onFilesSelected"
         />
       </div>
@@ -29,6 +50,7 @@
   import { Label } from "~/components/ui/label";
   import { Input } from "~/components/ui/input";
   import { Button } from "~/components/ui/button";
+  import MdiCamera from "~icons/mdi/camera";
   import { filesToPhotoPreviews, type PhotoPreview } from "./photo-uploader";
 
   const props = withDefaults(
@@ -50,12 +72,17 @@
 
   const { t } = useI18n();
   const fileInput = ref<HTMLInputElement | null>(null);
+  const cameraInput = ref<HTMLInputElement | null>(null);
 
   const label = computed(() => props.label || t("components.entity.create_modal.item_photo"));
   const buttonLabel = computed(() => props.buttonLabel || t("components.entity.create_modal.upload_photos"));
 
   function openFilePicker() {
     fileInput.value?.click();
+  }
+
+  function openCameraPicker() {
+    cameraInput.value?.click();
   }
 
   async function onFilesSelected(event: Event) {

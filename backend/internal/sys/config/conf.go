@@ -62,6 +62,7 @@ type Config struct {
 	Otel       OTelConfig     `yaml:"otel"`
 	Auth       AuthConfig     `yaml:"auth"`
 	Notifier   NotifierConf   `yaml:"notifier"`
+	AI         AIConf         `yaml:"ai"`
 }
 
 type Options struct {
@@ -158,6 +159,29 @@ func (c BarcodeAPIConf) MarshalJSON() ([]byte, error) {
 	a := alias(c)
 	if a.TokenBarcodespider != "" {
 		a.TokenBarcodespider = redactedValue
+	}
+	return json.Marshal(a)
+}
+
+// AIConf configures the optional AI photo-recognition integration that
+// suggests entity details (name, tags, location) from an uploaded photo via
+// an OpenAI-compatible chat-completions API (e.g. Moonshot/Kimi).
+type AIConf struct {
+	Enabled bool   `yaml:"enabled"  conf:"default:false"`
+	APIKey  string `yaml:"api_key"`
+	BaseURL string `yaml:"base_url" conf:"default:https://api.moonshot.cn/v1"`
+	Model   string `yaml:"model"    conf:"default:kimi-latest"`
+	// Language is the natural language the model is instructed to use for the
+	// suggested name/description (e.g. "English", "简体中文").
+	Language string        `yaml:"language" conf:"default:English"`
+	Timeout  time.Duration `yaml:"timeout"  conf:"default:30s"`
+}
+
+func (c AIConf) MarshalJSON() ([]byte, error) {
+	type alias AIConf
+	a := alias(c)
+	if a.APIKey != "" {
+		a.APIKey = redactedValue
 	}
 	return json.Marshal(a)
 }

@@ -202,6 +202,52 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/repo.EntityOut"
+  /v1/entities/ai-suggest:
+    post:
+      security:
+        - Bearer: []
+      description: Analyzes a photo of an item with the configured AI provider and
+      tags:
+        - Entities
+      summary: AI Entity Suggestion
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  description: Photo of the item
+                  type: string
+                  format: binary
+              required:
+                - file
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/services.EntityAISuggestion"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
   /v1/entities/export:
     get:
       security:
@@ -4187,6 +4233,23 @@ components:
           type: string
         value:
           type: number
+    services.EntityAISuggestion:
+      type: object
+      properties:
+        confidence:
+          type: number
+        description:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        suggestedLocationId:
+          type: string
+        suggestedTagIds:
+          type: array
+          items:
+            type: string
     services.Latest:
       type: object
       properties:
@@ -4230,6 +4293,8 @@ components:
     v1.APISummary:
       type: object
       properties:
+        aiEnabled:
+          type: boolean
         allowRegistration:
           type: boolean
         build:

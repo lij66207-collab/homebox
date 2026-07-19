@@ -118,6 +118,9 @@
             "randomize": "随机颜色"
         },
         "form": {
+            "icon_selector": {
+                "select_icon": "选择 {name} 图标"
+            },
             "min_length": "最少 {min}",
             "password": {
                 "toggle_show": "切换密码显示"
@@ -173,33 +176,37 @@
                 "qr_tooltip": "显示二维码"
             },
             "password_score": {
-                "password_strength": "密码强度"
+                "password_strength": "密码强度",
+                "does_not_meet_requirement": "不满足密码强度要求",
+                "very_weak": "非常弱",
+                "weak": "弱",
+                "good": "良好",
+                "strong": "强",
+                "very_strong": "非常强"
             }
         },
-        "item": {
-            "attachments_list": {
-                "download": "下载",
-                "open_new_tab": "在新标签页中打开"
+        "entity": {
+            "selector": {
+                "placeholder": "选择类型…"
             },
             "create_modal": {
-                "clear_template": "清空模板",
-                "delete_photo": "删除照片",
-                "item_description": "物品描述",
-                "item_name": "物品名称",
-                "item_photo": "物品照片📷",
-                "item_quantity": "物品数量",
-                "parent_item": "父物品",
-                "product_tooltip_input_barcode": "使用手动提供的条形码自动填充",
-                "product_tooltip_scan_barcode": "使用相机扫描条形码自动填充",
-                "rotate_photo": "旋转照片",
-                "set_as_primary_photo": "设置为{isPrimary, select, true {非} false {} other {}}封面",
-                "title": "创建物品",
+                "entity_name": "{type}名称",
+                "entity_quantity": "{type}数量",
+                "entity_description": "{type}描述",
+                "entity_photo": "{type}照片📷",
+                "upload_photos": "上传照片",
+                "take_photo": "拍照",
+                "ai_suggest": "AI 识别",
+                "ai_suggest_tooltip": "拍照后由 AI 自动填写物品信息",
+                "ai_suggest_banner": "已按 AI 建议预填，请核对后再创建。",
+                "uploaded": "照片已上传",
                 "toast": {
-                    "already_creating": "已在创建物品",
-                    "create_failed": "无法创建物品",
-                    "create_success": "物品创建成功",
+                    "already_creating": "已在创建{type}",
+                    "create_failed": "无法创建{type}",
+                    "create_success": "{type}创建成功",
                     "failed_load_parent": "加载父项失败-请手动选择",
                     "no_canvas_support": "您的浏览器不支持Canvas操作",
+                    "please_select_entity_type": "请选择实体类型。",
                     "please_select_location": "请选择位置。",
                     "rotate_failed": "旋转图片失败：{ error }",
                     "rotate_process_failed": "处理已旋转图片失败",
@@ -208,8 +215,20 @@
                     "upload_success": "{count, plural, =0 {未上传照片} =1 {照片上传成功} other {所有照片上传成功}}",
                     "uploading_photos": "{count, plural, =0 {没有照片要上传} =1 {正上传 1 张照片…} other {正上传 {count} 照片…}}"
                 },
-                "upload_photos": "上传照片",
-                "uploaded": "照片已上传"
+                "clear_template": "清空模板",
+                "delete_photo": "删除照片",
+                "parent_item": "父物品",
+                "product_tooltip_input_barcode": "使用手动提供的条形码自动填充",
+                "product_tooltip_scan_barcode": "使用相机扫描条形码自动填充",
+                "rotate_photo": "旋转照片",
+                "set_as_primary_photo": "设置为{isPrimary, select, true {非} false {} other {}}封面",
+                "item_selector_no_results_text": "输入以搜索…"
+            }
+        },
+        "item": {
+            "attachments_list": {
+                "download": "下载",
+                "open_new_tab": "在新标签页中打开"
             },
             "product_import": {
                 "barcode": "产品条形码",
@@ -218,6 +237,7 @@
                 "error_invalid_barcode": "提供的条形码无效",
                 "error_not_found": "未找到该条形码对应的产品。",
                 "import_selected": "导入所选",
+                "photo_alt": "产品照片",
                 "search_item": "搜索产品",
                 "title": "导入产品"
             },
@@ -280,17 +300,6 @@
             }
         },
         "location": {
-            "create_modal": {
-                "location_description": "位置描述",
-                "location_name": "位置名称",
-                "location_photo": "位置照片📷",
-                "title": "创建位置",
-                "toast": {
-                    "already_creating": "已在创建位置",
-                    "create_failed": "无法创建位置",
-                    "create_success": "已创建位置"
-                }
-            },
             "selector": {
                 "clear": "清除位置选择",
                 "no_location_found": "未找到位置",
@@ -300,7 +309,8 @@
             },
             "tree": {
                 "no_locations": "没有可用的位置。点击创建按钮新增位置。"
-            }
+            },
+            "create_item": "创建物品"
         },
         "quick_menu": {
             "no_results": "未找到结果。",
@@ -391,6 +401,59 @@
                 "updated": "模板已更新"
             },
             "using_template": "使用模板： {name}"
+        },
+        "entityTypes": {
+            "create_dialog": {
+                "title": "创建实体类型",
+                "name_label": "名称",
+                "is_container_location_type_label": "是容器/位置类型",
+                "button": "创建"
+            },
+            "update_dialog": {
+                "title": "更新实体类型",
+                "name_label": "名称",
+                "is_container_location_type_label": "是容器/位置类型",
+                "button": "更新"
+            },
+            "page": {
+                "title": "实体类型",
+                "create": "创建",
+                "empty_title": "尚未定义实体类型。",
+                "empty_button": "创建实体类型"
+            },
+            "card": {
+                "default_template": "默认模板：{name}",
+                "badge_container": "容器",
+                "tooltip": {
+                    "edit": "编辑",
+                    "delete": "删除"
+                },
+                "actions": {
+                    "delete": "删除"
+                }
+            },
+            "toasts": {
+                "name_required": "名称为必填项",
+                "create_failed": "创建实体类型失败",
+                "create_success": "实体类型已创建",
+                "update_failed": "更新实体类型失败",
+                "update_success": "实体类型已更新",
+                "delete_confirm_failed": "删除实体类型失败。请确保没有实体正在使用该类型。",
+                "delete_success": "实体类型已删除"
+            },
+            "confirm": {
+                "convert_item_to_location": "将物品类型转换为位置类型会导致使用该类型的实体丢失字段。确定要继续吗？",
+                "delete_entity_type": "确定要删除“{name}”吗？"
+            }
+        },
+        "ui": {
+            "breadcrumb": {
+                "aria_label": "面包屑导航",
+                "more": "更多"
+            },
+            "sidebar": {
+                "toggle": "切换侧边栏"
+            }
         }
     },
     "errors": {
@@ -449,7 +512,12 @@
         "value": "值",
         "version": "版本：{version}",
         "welcome": "欢迎，{username}",
-        "yes": "是"
+        "yes": "是",
+        "item": "物品",
+        "location": "位置",
+        "entity": "实体",
+        "entity_type": "实体类型",
+        "shortcut": "快捷键：{keys}"
     },
     "home": {
         "quick_statistics": "快速统计",
@@ -510,6 +578,7 @@
         "associated_with_multiple": "此资产ID与多个物品相关联",
         "attachment": "附件",
         "attachments": "附件",
+        "attachment_image": "附件图片",
         "changes_persisted_immediately": "对附件的更改将会立即保存",
         "created_at": "创建时间",
         "custom_fields": "自定义字段",
@@ -539,7 +608,8 @@
                 "select_type": "选择类型",
                 "title": "附件编辑"
             },
-            "view_image": "查看图片"
+            "view_image": "查看图片",
+            "change_entity_type_confirm": "更改实体类型可能会导致当前类型与新类型之间不共有的字段数据丢失。确定要更改实体类型吗？"
         },
         "edit_details": "编辑详情",
         "field": "字段",
@@ -600,6 +670,7 @@
             "asset_not_found": "未找到资产",
             "attachment_deleted": "附件已删除",
             "attachment_updated": "附件已更新",
+            "attachment_too_large": "附件过大：超出了服务器的上传大小限制",
             "attachment_uploaded": "附件已上传",
             "child_items_location_no_longer_synced": "子物品的位置将不再与此物品同步。",
             "child_items_location_synced": "子物品的位置已与此物品同步",
@@ -631,6 +702,7 @@
         "bs-BA": "波斯尼亚语（波斯尼亚和黑塞哥维那）",
         "ca": "加泰罗尼亚语",
         "cs-CZ": "捷克语",
+        "da-DK": "丹麦语",
         "de": "德语",
         "en": "英语",
         "es": "西班牙语",
@@ -648,7 +720,9 @@
         "pl": "波兰语",
         "pt-BR": "葡萄牙语（巴西）",
         "pt-PT": "葡萄牙语（葡萄牙）",
+        "ro-RO": "罗马尼亚语",
         "ru": "俄语",
+        "sk-SK": "斯洛伐克语",
         "sl": "斯洛文尼亚语",
         "sq-AL": "阿尔巴尼亚语",
         "sv": "瑞典语",
@@ -662,9 +736,7 @@
         "zh-MO": "中文（澳门）",
         "zh-TW": "中文（繁体）"
     },
-    "languages.da-DK": "丹麦语",
-    "languages.ro-RO": "罗马尼亚语",
-    "languages.sk-SK": "斯洛伐克语",
+    "languages.en@pirate": "英语（海盗版）",
     "languages.sr-RS": "塞尔维亚语（塞尔维亚）",
     "locations": {
         "child_locations": "子位置",
@@ -770,6 +842,8 @@
         "inactive": "未启用",
         "language": "语言",
         "legacy_image_fit": "{currentValue, select, true {禁用旧版图像填充：用边框填充图像} false {启用旧版图像适配：裁剪以填充图像} other {未命中}}",
+        "logout_all_confirm": "这将退出您在包括本设备在内的所有设备上的登录，您需要重新登录。继续吗？",
+        "logout_all_devices": "退出所有设备",
         "moved_notice_body": "通知器、邀请和货币设置已移至集合页面。",
         "moved_notice_description": "这些设置现在按集合进行管理。",
         "moved_notice_link_invites": "集合邀请",
@@ -801,7 +875,9 @@
             "failed_test_notifier": "测试通知器失败。",
             "failed_update_group": "更新群组失败",
             "failed_update_notifier": "更新通知器失败。",
+            "failed_logout_all": "退出所有设备失败。",
             "group_updated": "已更新群组",
+            "logout_all_success": "已退出所有设备。",
             "notifier_test_success": "通知器测试成功。",
             "password_changed": "已成功修改密码。"
         },

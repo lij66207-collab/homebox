@@ -327,6 +327,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/entities/ai-suggest": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Analyzes a photo of an item with the configured AI provider and",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entities"
+                ],
+                "summary": "AI Entity Suggestion",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Photo of the item",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.EntityAISuggestion"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/validate.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/entities/export": {
             "get": {
                 "security": [
@@ -6277,6 +6332,32 @@ const docTemplate = `{
                 }
             }
         },
+        "services.EntityAISuggestion": {
+            "type": "object",
+            "properties": {
+                "confidence": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "suggestedLocationId": {
+                    "type": "string"
+                },
+                "suggestedTagIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "services.Latest": {
             "type": "object",
             "properties": {
@@ -6336,6 +6417,9 @@ const docTemplate = `{
         "v1.APISummary": {
             "type": "object",
             "properties": {
+                "aiEnabled": {
+                    "type": "boolean"
+                },
                 "allowRegistration": {
                     "type": "boolean"
                 },

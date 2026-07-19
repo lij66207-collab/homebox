@@ -17,6 +17,7 @@ type AllServices struct {
 	BackgroundService *BackgroundService
 	Exports           *ExportService
 	Currencies        *currencies.CurrencyRegistry
+	AI                *AIService
 }
 
 type OptionsFunc func(*options)
@@ -25,6 +26,7 @@ type options struct {
 	autoIncrementAssetID bool
 	currencies           []currencies.Currency
 	notifierConfig       *config.NotifierConf
+	aiConfig             *config.AIConf
 	bus                  *eventbus.EventBus
 	db                   *ent.Client
 	storage              config.Storage
@@ -49,6 +51,16 @@ func WithNotifierConfig(v *config.NotifierConf) func(*options) {
 	return func(o *options) {
 		if v != nil {
 			o.notifierConfig = v
+		}
+	}
+}
+
+// WithAIConfig wires the AI photo-recognition configuration into the
+// AIService. When not provided the service stays disabled.
+func WithAIConfig(v *config.AIConf) func(*options) {
+	return func(o *options) {
+		if v != nil {
+			o.aiConfig = v
 		}
 	}
 }
@@ -100,6 +112,7 @@ func New(repos *repo.AllRepos, opts ...OptionsFunc) *AllServices {
 		autoIncrementAssetID: true,
 		currencies:           defaultCurrencies,
 		notifierConfig:       defaultNotifierConf(),
+		aiConfig:             &config.AIConf{},
 	}
 
 	for _, opt := range opts {
@@ -127,5 +140,6 @@ func New(repos *repo.AllRepos, opts ...OptionsFunc) *AllServices {
 			dialect:    options.dialect,
 		},
 		Currencies: currencies.NewCurrencyService(options.currencies),
+		AI:         NewAIService(repos, *options.aiConfig),
 	}
 }

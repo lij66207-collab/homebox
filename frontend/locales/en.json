@@ -118,6 +118,9 @@
             "randomize": "Randomize color"
         },
         "form": {
+            "icon_selector": {
+                "select_icon": "Select {name} icon"
+            },
             "min_length": "min {min}",
             "password": {
                 "toggle_show": "Toggle Password Show"
@@ -174,7 +177,12 @@
             },
             "password_score": {
                 "password_strength": "Password Strength",
-                "does_not_meet_requirement": "Doesn't meet password strength requirement"
+                "does_not_meet_requirement": "Doesn't meet password strength requirement",
+                "very_weak": "Very weak",
+                "weak": "Weak",
+                "good": "Good",
+                "strong": "Strong",
+                "very_strong": "Very strong"
             }
         },
         "entity": {
@@ -187,8 +195,13 @@
                 "entity_description": "{type} Description",
                 "entity_photo": "{type} Photo 📷",
                 "upload_photos": "Upload Photos",
+                "take_photo": "Take Photo",
+                "ai_suggest": "AI Identify",
+                "ai_suggest_tooltip": "Take a photo and let AI fill in the details",
+                "ai_suggest_banner": "AI suggestions applied — please review before creating.",
                 "uploaded": "Uploaded Photo",
                 "toast": {
+                    "ai_suggest_failed": "AI recognition failed, please fill in manually",
                     "already_creating": "Already creating an {type}",
                     "create_failed": "Couldn't create {type}",
                     "create_success": "{type} created",
@@ -225,6 +238,7 @@
                 "error_invalid_barcode": "Invalid barcode provided",
                 "error_not_found": "No product found with given barcode.",
                 "import_selected": "Import selected",
+                "photo_alt": "Product's photo",
                 "search_item": "Search product",
                 "title": "Import product"
             },
@@ -432,6 +446,15 @@
                 "convert_item_to_location": "Converting an item type to a location type will result in a loss of fields for entities using this type. Are you sure you want to continue?",
                 "delete_entity_type": "Are you sure you want to delete \"{name}\"?"
             }
+        },
+        "ui": {
+            "breadcrumb": {
+                "aria_label": "Breadcrumb",
+                "more": "More"
+            },
+            "sidebar": {
+                "toggle": "Toggle Sidebar"
+            }
         }
     },
     "errors": {
@@ -494,7 +517,8 @@
         "item": "Item",
         "location": "Location",
         "entity": "Entity",
-        "entity_type": "Entity Type"
+        "entity_type": "Entity Type",
+        "shortcut": "Shortcut: {keys}"
     },
     "home": {
         "quick_statistics": "Quick Statistics",
@@ -555,6 +579,7 @@
         "associated_with_multiple": "This Asset Id is associated with multiple items",
         "attachment": "Attachment",
         "attachments": "Attachments",
+        "attachment_image": "Attachment image",
         "changes_persisted_immediately": "Changes to attachments will be saved immediately",
         "created_at": "Created At",
         "custom_fields": "Custom Fields",

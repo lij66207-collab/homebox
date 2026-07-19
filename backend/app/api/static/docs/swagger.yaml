@@ -2122,6 +2122,23 @@ definitions:
       value:
         type: number
     type: object
+  services.EntityAISuggestion:
+    properties:
+      confidence:
+        type: number
+      description:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: number
+      suggestedLocationId:
+        type: string
+      suggestedTagIds:
+        items:
+          type: string
+        type: array
+    type: object
   services.Latest:
     properties:
       date:
@@ -2164,6 +2181,8 @@ definitions:
     - RoleOwner
   v1.APISummary:
     properties:
+      aiEnabled:
+        type: boolean
       allowRegistration:
         type: boolean
       build:
@@ -2905,6 +2924,41 @@ paths:
       security:
       - Bearer: []
       summary: Get the full path of an entity
+      tags:
+      - Entities
+  /v1/entities/ai-suggest:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Analyzes a photo of an item with the configured AI provider and
+      parameters:
+      - description: Photo of the item
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.EntityAISuggestion'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: AI Entity Suggestion
       tags:
       - Entities
   /v1/entities/export:

@@ -112,6 +112,27 @@ func Test_OTelConfig_RedactsHeaders(t *testing.T) {
 	assert.Contains(t, string(out), sentinel)
 }
 
+func Test_AIConf_RedactsAPIKey(t *testing.T) {
+	c := AIConf{Enabled: true, APIKey: "sk-ai-secret", BaseURL: "https://api.moonshot.cn/v1", Model: "kimi-latest"}
+
+	out, err := json.Marshal(c)
+	require.NoError(t, err)
+
+	assert.NotContains(t, string(out), "sk-ai-secret")
+	assert.Contains(t, string(out), "https://api.moonshot.cn/v1")
+	assert.Contains(t, string(out), "kimi-latest")
+	assert.Contains(t, string(out), sentinel)
+}
+
+func Test_AIConf_EmptyAPIKeyStaysEmpty(t *testing.T) {
+	c := AIConf{}
+
+	out, err := json.Marshal(c)
+	require.NoError(t, err)
+
+	assert.NotContains(t, string(out), sentinel)
+}
+
 func Test_Config_FullMarshalRedactsAllSecrets(t *testing.T) {
 	c := &Config{
 		Auth:    AuthConfig{APIKeyPepper: "pepper-secret"},
@@ -124,6 +145,7 @@ func Test_Config_FullMarshalRedactsAllSecrets(t *testing.T) {
 		},
 		Barcode: BarcodeAPIConf{TokenBarcodespider: "bs-secret"},
 		Otel:    OTelConfig{Headers: "Authorization=Bearer otel-secret"},
+		AI:      AIConf{APIKey: "ai-secret"},
 	}
 
 	out, err := json.MarshalIndent(c, "", "  ")
@@ -138,6 +160,7 @@ func Test_Config_FullMarshalRedactsAllSecrets(t *testing.T) {
 		"pubsecret",
 		"bs-secret",
 		"otel-secret",
+		"ai-secret",
 	} {
 		assert.NotContainsf(t, string(out), secret, "expected %q to be redacted in output", secret)
 	}

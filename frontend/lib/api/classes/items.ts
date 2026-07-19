@@ -1,5 +1,6 @@
 import { BaseAPI, route } from "../base";
 import type {
+  EntityAISuggestion,
   EntityCreate,
   EntityListResult,
   EntityOut,
@@ -179,6 +180,16 @@ export class ItemsApi extends BaseAPI {
 
     return this.http.post<FormData, void>({
       url: route("/entities/import"),
+      data: formData,
+    });
+  }
+
+  aiSuggest(file: File | Blob) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return this.http.post<FormData, EntityAISuggestion>({
+      url: route(`/entities/ai-suggest`),
       data: formData,
     });
   }
