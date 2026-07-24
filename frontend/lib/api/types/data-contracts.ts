@@ -53,6 +53,7 @@ export enum ExportKind {
   DefaultKind = "export",
   KindExport = "export",
   KindImport = "import",
+  KindBackup = "backup",
 }
 
 export enum EntityfieldType {
@@ -248,6 +249,10 @@ export interface EntEntity {
   insured: boolean;
   /** LifetimeWarranty holds the value of the "lifetime_warranty" field. */
   lifetime_warranty: boolean;
+  /** LowStockNotified holds the value of the "low_stock_notified" field. */
+  low_stock_notified: boolean;
+  /** LowStockThreshold holds the value of the "low_stock_threshold" field. */
+  low_stock_threshold: number;
   /** Manufacturer holds the value of the "manufacturer" field. */
   manufacturer: string;
   /** ModelNumber holds the value of the "model_number" field. */
@@ -681,6 +686,8 @@ export interface EntUser {
   created_at: string;
   /** DefaultGroupID holds the value of the "default_group_id" field. */
   default_group_id: string;
+  /** Disabled holds the value of the "disabled" field. */
+  disabled: boolean;
   /**
    * Edges holds the relations/edges for other nodes in the graph.
    * The values are being populated by the UserQuery when eager-loading is set.
@@ -868,6 +875,9 @@ export interface EntityOut {
    * items ultimately live in. Nil for top-level entities.
    */
   location?: EntitySummary | null;
+  lowStockNotified: boolean;
+  /** Low stock */
+  lowStockThreshold?: number | null;
   manufacturer: string;
   modelNumber: string;
   name: string;
@@ -921,6 +931,9 @@ export interface EntitySummary {
   insured: boolean;
   /** Container-specific (populated when querying locations) */
   itemCount: number;
+  lowStockNotified: boolean;
+  /** Low stock */
+  lowStockThreshold?: number | null;
   name: string;
   /** Edges */
   parent?: EntitySummary | null;
@@ -1077,6 +1090,8 @@ export interface EntityUpdate {
   insured: boolean;
   /** Warranty */
   lifetimeWarranty: boolean;
+  /** Low stock — nil clears the threshold */
+  lowStockThreshold?: number | null;
   manufacturer: string;
   modelNumber: string;
   /**
@@ -1345,6 +1360,7 @@ export interface TreeItem {
 
 export interface UserOut {
   defaultGroupId: string;
+  disabled: boolean;
   email: string;
   groupIds: string[];
   id: string;
@@ -1432,6 +1448,24 @@ export interface APISummary {
 
 export interface ActionAmountResult {
   completed: number;
+}
+
+export interface AdminResetLinkResponse {
+  link: string;
+}
+
+export interface AdminSetDisabledRequest {
+  disabled: boolean;
+}
+
+export interface AdminSetPasswordRequest {
+  password: string;
+}
+
+export interface AdminUserCreateRequest {
+  email: string;
+  name: string;
+  password: string;
 }
 
 export interface BackupScheduleUpdateRequest {

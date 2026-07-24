@@ -274,6 +274,14 @@ definitions:
       lifetime_warranty:
         description: LifetimeWarranty holds the value of the "lifetime_warranty" field.
         type: boolean
+      low_stock_notified:
+        description: LowStockNotified holds the value of the "low_stock_notified"
+          field.
+        type: boolean
+      low_stock_threshold:
+        description: LowStockThreshold holds the value of the "low_stock_threshold"
+          field.
+        type: number
       manufacturer:
         description: Manufacturer holds the value of the "manufacturer" field.
         type: string
@@ -944,6 +952,9 @@ definitions:
       default_group_id:
         description: DefaultGroupID holds the value of the "default_group_id" field.
         type: string
+      disabled:
+        description: Disabled holds the value of the "disabled" field.
+        type: boolean
       edges:
         allOf:
         - $ref: '#/definitions/ent.UserEdges'
@@ -1060,11 +1071,13 @@ definitions:
     - export
     - export
     - import
+    - backup
     type: string
     x-enum-varnames:
     - DefaultKind
     - KindExport
     - KindImport
+    - KindBackup
   export.Status:
     enum:
     - pending
@@ -1313,6 +1326,13 @@ definitions:
           items ultimately live in. Nil for top-level entities.
         x-nullable: true
         x-omitempty: true
+      lowStockNotified:
+        type: boolean
+      lowStockThreshold:
+        description: Low stock
+        type: number
+        x-nullable: true
+        x-omitempty: true
       manufacturer:
         type: string
       modelNumber:
@@ -1434,6 +1454,13 @@ definitions:
       itemCount:
         description: Container-specific (populated when querying locations)
         type: number
+      lowStockNotified:
+        type: boolean
+      lowStockThreshold:
+        description: Low stock
+        type: number
+        x-nullable: true
+        x-omitempty: true
       name:
         type: string
       parent:
@@ -1722,6 +1749,11 @@ definitions:
       lifetimeWarranty:
         description: Warranty
         type: boolean
+      lowStockThreshold:
+        description: Low stock — nil clears the threshold
+        type: number
+        x-nullable: true
+        x-omitempty: true
       manufacturer:
         type: string
       modelNumber:
@@ -2170,6 +2202,8 @@ definitions:
     properties:
       defaultGroupId:
         type: string
+      disabled:
+        type: boolean
       email:
         type: string
       groupIds:
@@ -2342,6 +2376,36 @@ definitions:
     properties:
       completed:
         type: integer
+    type: object
+  v1.AdminResetLinkResponse:
+    properties:
+      link:
+        type: string
+    type: object
+  v1.AdminSetDisabledRequest:
+    properties:
+      disabled:
+        type: boolean
+    type: object
+  v1.AdminSetPasswordRequest:
+    properties:
+      password:
+        type: string
+    required:
+    - password
+    type: object
+  v1.AdminUserCreateRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - name
+    - password
     type: object
   v1.BackupScheduleUpdateRequest:
     properties:
@@ -2649,6 +2713,182 @@ paths:
       summary: Zero Out Time Fields
       tags:
       - Actions
+  /v1/admin/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.UserOut'
+            type: array
+        "403":
+          description: Not a superuser
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: List all users (superuser only)
+      tags:
+      - Admin
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.AdminUserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  $ref: '#/definitions/repo.UserOut'
+              type: object
+        "403":
+          description: Not a superuser
+          schema:
+            type: string
+        "409":
+          description: Email already in use
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Create a user (superuser only)
+      tags:
+      - Admin
+  /v1/admin/users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Cannot delete own account via admin API
+          schema:
+            type: string
+        "403":
+          description: Not a superuser
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Delete a user (superuser only)
+      tags:
+      - Admin
+  /v1/admin/users/{id}/disabled:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Disabled flag
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.AdminSetDisabledRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Cannot disable own account
+          schema:
+            type: string
+        "403":
+          description: Not a superuser
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Disable or re-enable a user account (superuser only)
+      tags:
+      - Admin
+  /v1/admin/users/{id}/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New password
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.AdminSetPasswordRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Password too short
+          schema:
+            type: string
+        "403":
+          description: Not a superuser
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Set a user's password directly (superuser only)
+      tags:
+      - Admin
+  /v1/admin/users/{id}/reset-link:
+    post:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  $ref: '#/definitions/v1.AdminResetLinkResponse'
+              type: object
+        "403":
+          description: Not a superuser
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Generate a one-time password reset link for a user (superuser only)
+      tags:
+      - Admin
   /v1/assets/{id}:
     get:
       parameters:
