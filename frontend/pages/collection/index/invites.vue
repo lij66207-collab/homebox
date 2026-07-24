@@ -158,7 +158,56 @@
         {{ $t("collection.no_invites") }}
       </div>
 
-      <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
+      <!-- Mobile: stacked cards -->
+      <div v-if="allInvites.length" class="space-y-2 sm:hidden">
+        <div v-for="inv in allInvites" :key="inv.id || inv.token" class="rounded-md border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="break-all font-mono text-xs">
+                <template v-if="inv.token">
+                  {{ inv.token }}
+                </template>
+                <span v-else class="font-sans text-muted-foreground">
+                  {{ $t("collection.invite_token_hidden") }}
+                </span>
+              </p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                {{ $t("collection.expires_at") }}: {{ new Date(inv.expiresAt).toLocaleString() }}
+              </p>
+              <p class="text-sm text-muted-foreground">{{ $t("collection.remaining_uses") }}: {{ inv.uses }}</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <CopyText
+                v-if="inv.token"
+                :text="`${baseUrl}?token=${inv.token}`"
+                :icon-size="16"
+                :tooltip="$t('collection.copy_invite')"
+              />
+              <TooltipProvider :delay-duration="0">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      :aria-label="$t('global.delete')"
+                      :disabled="removing[inv.id]"
+                      @click="handleDelete(inv)"
+                    >
+                      <MdiDelete class="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {{ $t("global.delete") }}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop: table -->
+      <div v-if="allInvites.length" class="scroll-bg hidden overflow-x-auto rounded-md border bg-card sm:block">
         <Table class="min-w-[640px]">
           <TableHeader>
             <TableRow>

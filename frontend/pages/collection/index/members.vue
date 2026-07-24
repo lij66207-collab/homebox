@@ -100,7 +100,36 @@
         {{ $t("collection.members.empty") }}
       </div>
 
-      <div v-else class="scroll-bg overflow-x-auto rounded-md border bg-card">
+      <!-- Mobile: stacked cards -->
+      <div v-if="members.length" class="space-y-2 sm:hidden">
+        <div v-for="user in members" :key="user.id" class="flex items-center gap-3 rounded-md border bg-card p-4">
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-medium">{{ user.name }}</p>
+            <p class="break-all text-sm text-muted-foreground">{{ user.email }}</p>
+          </div>
+          <TooltipProvider :delay-duration="0">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  :aria-label="$t('global.delete')"
+                  :disabled="removing[user.id] || (isLastMember && user.id === currentUserId)"
+                  @click="handleRemove(user)"
+                >
+                  <MdiDelete class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {{ $t("global.delete") }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      <!-- Desktop: table -->
+      <div v-if="members.length" class="scroll-bg hidden overflow-x-auto rounded-md border bg-card sm:block">
         <Table class="min-w-[480px]">
           <TableHeader>
             <TableRow>
