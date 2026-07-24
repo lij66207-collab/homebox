@@ -1,5 +1,7 @@
 <template>
-  <Card class="relative overflow-hidden">
+  <Card
+    class="relative overflow-hidden transition-all duration-200 ease-out-expo hover:-translate-y-1 hover:shadow-card-hover"
+  >
     <div v-if="tableRow" class="absolute left-1 top-1 z-10">
       <Checkbox
         class="size-5 bg-accent hover:bg-background-accent"
@@ -9,7 +11,7 @@
       />
     </div>
     <NuxtLink :to="`/item/${item.id}`">
-      <div class="relative h-[200px]">
+      <div class="relative h-[200px] bg-muted">
         <img
           v-if="imageUrl && objectContain"
           class="absolute h-[200px] w-full object-cover blur-md"
@@ -19,7 +21,7 @@
         />
         <img
           v-if="imageUrl"
-          class="absolute h-[200px] w-full shadow-md"
+          class="img-fade-in absolute h-[200px] w-full shadow-md"
           :class="objectContain ? 'object-contain' : 'object-cover'"
           loading="lazy"
           :src="imageUrl"

@@ -5,11 +5,11 @@
     </ClientOnly>
 
     <NuxtLayout>
-      <Html :lang="locale" :data-theme="theme || 'homebox'" />
+      <Html :lang="locale" :data-theme="isDark ? 'dark' : 'light'" :class="{ dark: isDark }" />
       <Link rel="icon" type="image/svg" href="/favicon.svg" />
       <Link rel="apple-touch-icon" href="/apple-touch-icon.png" size="180x180" />
-      <Link rel="mask-icon" href="/mask-icon.svg" color="#5b7f67" />
-      <Meta name="theme-color" content="#5b7f67" />
+      <Link rel="mask-icon" href="/mask-icon.svg" color="#5048e5" />
+      <Meta name="theme-color" :content="isDark ? '#0d121b' : '#5048e5'" />
       <Link rel="manifest" href="/manifest.webmanifest" />
       <NuxtPage />
     </NuxtLayout>
@@ -21,7 +21,7 @@
   import { DialogProvider } from "@/components/ui/dialog-provider";
   import { Toaster } from "@/components/ui/sonner";
 
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
 
   const { locale } = useI18n();
 

@@ -50,6 +50,7 @@ export default defineNuxtConfig({
   },
 
   app: {
+    pageTransition: { name: "page", mode: "out-in" },
     head: {
       script: [{ src: "/set-theme.js" }],
     },
@@ -84,10 +85,10 @@ export default defineNuxtConfig({
       enabled: false,
     },
     manifest: {
-      name: "Homebox",
-      short_name: "Homebox",
+      name: "LJJ Organizer",
+      short_name: "LJJ Organizer",
       description: "Home Inventory App",
-      theme_color: "#5b7f67",
+      theme_color: "#5048e5",
       start_url: "/home",
       icons: [
         {

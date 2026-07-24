@@ -8,12 +8,14 @@
   import MdiFill from "~icons/mdi/fill";
   import MdiKeyVariant from "~icons/mdi/key-variant";
   import MdiContentCopy from "~icons/mdi/content-copy";
+  import MdiWhiteBalanceSunny from "~icons/mdi/white-balance-sunny";
+  import MdiMoonWaningCrescent from "~icons/mdi/moon-waning-crescent";
+  import MdiMonitor from "~icons/mdi/monitor";
   import { Button } from "@/components/ui/button";
   import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
   import { useDialog } from "@/components/ui/dialog-provider";
   import LanguageSelector from "~/components/App/LanguageSelector.vue";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
-  import ThemePicker from "~/components/App/ThemePicker.vue";
   import ItemDuplicateSettings from "~/components/Item/DuplicateSettings.vue";
   import FormPassword from "~/components/Form/Password.vue";
   import FormTextField from "~/components/Form/TextField.vue";
@@ -33,7 +35,7 @@
     middleware: ["auth"],
   });
   useHead({
-    title: "HomeBox | " + t("menu.profile"),
+    title: "LJJ Organizer | " + t("menu.profile"),
   });
 
   const api = useUserApi();
@@ -48,6 +50,13 @@
   function setLegacyImageFit() {
     preferences.value.legacyImageFit = !preferences.value.legacyImageFit;
   }
+
+  const { mode: themeMode, setTheme } = useTheme();
+  const themeOptions = [
+    { value: "light", label: "profile.theme_light", icon: MdiWhiteBalanceSunny },
+    { value: "dark", label: "profile.theme_dark", icon: MdiMoonWaningCrescent },
+    { value: "system", label: "profile.theme_system", icon: MdiMonitor },
+  ] as const;
 
   const auth = useAuthContext();
 
@@ -473,7 +482,18 @@
               {{ $t("profile.legacy_image_fit", { currentValue: preferences.legacyImageFit }) }}
             </Button>
           </div>
-          <ThemePicker />
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-for="opt in themeOptions"
+              :key="opt.value"
+              :variant="themeMode === opt.value ? 'default' : 'secondary'"
+              size="sm"
+              @click="setTheme(opt.value)"
+            >
+              <component :is="opt.icon" class="mr-1" />
+              {{ $t(opt.label) }}
+            </Button>
+          </div>
         </div>
       </BaseCard>
 

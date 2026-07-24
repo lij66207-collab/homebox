@@ -10,5 +10,5 @@
 </script>
 
 <template>
-  <div :class="cn('animate-pulse rounded-md bg-muted', props.class)" />
+  <div :class="cn('skeleton-shimmer rounded-md bg-muted', props.class)" />
 </template>

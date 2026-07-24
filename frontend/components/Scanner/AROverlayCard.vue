@@ -1,7 +1,7 @@
 <template>
   <div
     ref="cardRef"
-    class="absolute left-0 top-0 z-10 w-[250px] cursor-pointer rounded-lg border border-border bg-background/85 p-2 shadow-lg backdrop-blur-sm"
+    class="absolute left-0 top-0 z-10 w-[250px] animate-scale-in cursor-pointer rounded-xl border border-border bg-background/85 p-2 shadow-overlay backdrop-blur-sm"
     :style="cardStyle"
     @click="handleClick"
   >

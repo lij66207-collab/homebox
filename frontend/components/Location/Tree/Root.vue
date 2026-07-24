@@ -21,6 +21,12 @@
     const list = props.locs ?? [];
     return [...list].sort((a, b) => collator.compare(a.name, b.name));
   });
+
+  // .stagger-item uses fill-mode "both", which would keep overriding transforms
+  // after the entrance finishes — remove it once the animation ends.
+  function removeStaggerClass(event: AnimationEvent) {
+    (event.currentTarget as HTMLElement).classList.remove("stagger-item");
+  }
 </script>
 
 <template>
@@ -47,7 +53,14 @@
     </div>
 
     <ul role="tree" :aria-labelledby="treeId" class="space-y-1">
-      <li v-for="item in sortedLocs" :key="item.id" role="treeitem">
+      <li
+        v-for="(item, index) in sortedLocs"
+        :key="item.id"
+        role="treeitem"
+        class="stagger-item"
+        :style="{ '--i': Math.min(index, 10) }"
+        @animationend="removeStaggerClass"
+      >
         <LocationTreeNode :item="item" :tree-id="treeId" :show-items="props.showItems ?? true" />
       </li>
     </ul>

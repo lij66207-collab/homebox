@@ -19,6 +19,10 @@
   import BaseContainer from "@/components/Base/Container.vue";
   import SearchFilter from "~/components/Search/Filter.vue";
   import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
+  import EmptyState from "~/components/global/EmptyState.vue";
+  import { Skeleton } from "@/components/ui/skeleton";
+  import { useDialog } from "@/components/ui/dialog-provider";
+  import { DialogID } from "~/components/ui/dialog-provider/utils";
   import type { LocationQueryRaw } from "vue-router";
 
   const { t } = useI18n();
@@ -28,7 +32,7 @@
   });
 
   useHead({
-    title: "HomeBox | " + t("global.items"),
+    title: "LJJ Organizer | " + t("global.items"),
   });
 
   const searchLocked = ref(false);
@@ -36,6 +40,7 @@
   const initialSearch = ref(true);
 
   const api = useUserApi();
+  const { openDialog } = useDialog();
   const loading = useMinLoader(500);
   const items = ref<EntitySummary[]>([]);
   const total = ref(0);
@@ -414,6 +419,32 @@
     await search();
   }
 
+  const hasActiveFilters = computed(
+    () =>
+      query.value.trim().length > 0 ||
+      selectedLocations.value.length > 0 ||
+      selectedTags.value.length > 0 ||
+      includeArchived.value ||
+      onlyWithoutPhoto.value ||
+      onlyWithPhoto.value ||
+      fieldTuples.value.length > 0
+  );
+
+  function resetFilters() {
+    includeArchived.value = false;
+    onlyWithoutPhoto.value = false;
+    onlyWithPhoto.value = false;
+    fieldTuples.value = [];
+    query.value = "";
+    selectedLocations.value = [];
+    selectedTags.value = [];
+    page.value = 1;
+  }
+
+  function createFirstItem() {
+    openDialog(DialogID.CreateEntity, { params: { baseType: "item" } });
+  }
+
   const pagination = proxyRefs({
     page,
     pageSize,
@@ -426,7 +457,7 @@
 
 <template>
   <BaseContainer>
-    <div v-if="locations && tags">
+    <div v-if="locations && tags" class="rounded-2xl border bg-card p-4 shadow-card">
       <div class="flex flex-wrap items-end gap-4 md:flex-nowrap">
         <div class="w-full">
           <Input v-model:model-value="query" :placeholder="$t('global.search')" class="h-12" />
@@ -581,7 +612,40 @@
     </div>
 
     <section>
+      <div
+        v-if="loading && items.length === 0"
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+      >
+        <div v-for="i in 8" :key="i" class="overflow-hidden rounded-2xl border bg-card shadow-card">
+          <Skeleton class="h-[200px] w-full rounded-none" />
+          <div class="flex flex-col gap-2 p-4 pt-3">
+            <Skeleton class="h-5 w-3/4" />
+            <Skeleton class="h-4 w-1/2" />
+          </div>
+        </div>
+      </div>
+      <EmptyState
+        v-else-if="items.length === 0 && queryParamsInitialized"
+        :icon="hasActiveFilters ? 'magnify' : 'package-variant'"
+        :title="
+          hasActiveFilters
+            ? $t('components.global.empty_state.items.title')
+            : $t('components.global.empty_state.items_empty.title')
+        "
+        :description="
+          hasActiveFilters
+            ? $t('components.global.empty_state.items.description')
+            : $t('components.global.empty_state.items_empty.description')
+        "
+        :action-label="
+          hasActiveFilters
+            ? $t('components.global.empty_state.items.action')
+            : $t('components.global.empty_state.items_empty.action')
+        "
+        @action="hasActiveFilters ? resetFilters() : createFirstItem()"
+      />
       <ItemViewSelectable
+        v-else
         :items="items"
         :location-flat-tree="locationFlatTree"
         :pagination="pagination"

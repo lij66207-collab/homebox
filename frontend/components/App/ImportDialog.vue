@@ -26,7 +26,7 @@
       </div>
 
       <form class="flex flex-col gap-4" @submit.prevent="submitCsvFile">
-        <Input ref="importRef" type="file" accept=".csv,.tsv" @change="setFile" />
+        <Input ref="importRef" type="file" accept=".csv,.tsv,.xlsx" @change="setFile" />
 
         <DialogFooter>
           <Button type="submit" :disabled="!importCsv"> {{ $t("global.submit") }} </Button>

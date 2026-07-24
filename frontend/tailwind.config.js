@@ -1,37 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
-  safelist: [
-    "dark",
-    "theme-aqua",
-    "theme-black",
-    "theme-bumblebee",
-    "theme-cmyk",
-    "theme-corporate",
-    "theme-cupcake",
-    "theme-cyberpunk",
-    "theme-dracula",
-    "theme-emerald",
-    "theme-fantasy",
-    "theme-forest",
-    "theme-garden",
-    "theme-halloween",
-    "theme-light",
-    "theme-lofi",
-    "theme-luxury",
-    "theme-pastel",
-    "theme-retro",
-    "theme-synthwave",
-    "theme-valentine",
-    "theme-wireframe",
-    "theme-autumn",
-    "theme-business",
-    "theme-acid",
-    "theme-lemonade",
-    "theme-night",
-    "theme-coffee",
-    "theme-winter",
-  ],
   prefix: "",
 
   theme: {
@@ -94,10 +63,20 @@ export default {
         "sidebar-ring": "hsl(var(--sidebar-ring))",
       },
       borderRadius: {
+        "2xl": "calc(var(--radius) + 4px)",
         xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        card: "0 1px 2px hsl(var(--shadow-color) / 0.06), 0 1px 3px hsl(var(--shadow-color) / 0.08)",
+        "card-hover": "0 8px 24px -8px hsl(var(--shadow-color) / 0.18), 0 2px 6px hsl(var(--shadow-color) / 0.08)",
+        overlay: "0 16px 48px -12px hsl(var(--shadow-color) / 0.25), 0 4px 12px hsl(var(--shadow-color) / 0.1)",
+        fab: "0 6px 16px -4px hsl(var(--primary) / 0.5)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       keyframes: {
         "accordion-down": {
@@ -116,12 +95,22 @@ export default {
           from: { height: "var(--reka-collapsible-content-height)" },
           to: { height: 0 },
         },
+        "fade-in-up": {
+          from: { opacity: 0, transform: "translateY(8px)" },
+          to: { opacity: 1, transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: 0, transform: "scale(0.96)" },
+          to: { opacity: 1, transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "collapsible-down": "collapsible-down 0.2s ease-in-out",
         "collapsible-up": "collapsible-up 0.2s ease-in-out",
+        "fade-in-up": "fade-in-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "scale-in": "scale-in 0.15s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
       typography: {
         DEFAULT: {

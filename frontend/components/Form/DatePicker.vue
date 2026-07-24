@@ -15,7 +15,6 @@
   import * as datelib from "~/lib/datelib/datelib";
   import { toDateOnlyString } from "~/lib/datelib/dateOnly";
   import { Label } from "@/components/ui/label";
-  import { darkThemes } from "~/lib/data/themes";
 
   const emit = defineEmits(["update:modelValue", "update:text"]);
 
@@ -48,7 +47,7 @@
     },
   });
 
-  const isDark = useIsThemeInList(darkThemes);
+  const { isDark } = useTheme();
 
   const formatDate = (date: Date | string | number) => fmtDate(date, "human", "date");
 

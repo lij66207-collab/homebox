@@ -1,5 +1,5 @@
 <template>
-  <Card>
+  <Card class="transition-all duration-200 ease-out-expo hover:-translate-y-0.5 hover:shadow-card-hover">
     <NuxtLink :to="`/location/${location.id}`" class="group/location-card transition duration-300">
       <div
         :class="{

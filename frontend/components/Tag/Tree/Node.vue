@@ -42,7 +42,7 @@
 <template>
   <div>
     <div
-      class="flex items-center gap-1 rounded p-1"
+      class="flex items-center gap-1 rounded-lg p-1 transition-colors duration-150"
       :class="{
         'cursor-pointer hover:bg-accent hover:text-accent-foreground': hasChildren,
       }"
@@ -78,7 +78,7 @@
       <NuxtLink class="text-lg hover:underline" :to="`/tag/${item.id}`" @click.stop>{{ item.name }}</NuxtLink>
     </div>
 
-    <div v-if="openRef" class="ml-4">
+    <div v-if="openRef" class="ml-4 animate-fade-in-up">
       <TagTreeNode v-for="child in sortedChildren" :key="child.id" :item="child" :tree-id="treeId" />
     </div>
   </div>

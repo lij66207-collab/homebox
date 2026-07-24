@@ -13,7 +13,7 @@
   const { t } = useI18n();
 
   useHead({
-    title: "HomeBox | " + t("index.reset_password_title"),
+    title: "LJJ Organizer | " + t("index.reset_password_title"),
   });
 
   definePageMeta({
@@ -59,14 +59,15 @@
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col items-center justify-center p-6">
-    <div class="mb-6 flex items-center gap-2 text-3xl font-bold tracking-tight">
-      HomeB
-      <AppLogo class="-mb-2 w-10" />
-      x
+  <div
+    class="flex min-h-screen flex-col items-center justify-center bg-background bg-[radial-gradient(60rem_40rem_at_15%_-10%,hsl(var(--primary)/0.14),transparent),radial-gradient(50rem_36rem_at_110%_110%,hsl(var(--primary)/0.10),transparent)] p-6"
+  >
+    <div class="mb-6 flex items-center gap-3 text-3xl font-bold tracking-tight">
+      <AppLogo class="w-10" />
+      <span>LJJ Organizer</span>
     </div>
 
-    <Card class="md:w-[460px]">
+    <Card class="animate-fade-in-up shadow-overlay md:w-[460px]">
       <CardHeader>
         <CardTitle class="flex items-center gap-2">
           <MdiLockReset class="size-6" />

@@ -14,6 +14,6 @@
   });
 
   useHead({
-    title: "HomeBox | " + t("scanner_ar.title"),
+    title: "LJJ Organizer | " + t("scanner_ar.title"),
   });
 </script>

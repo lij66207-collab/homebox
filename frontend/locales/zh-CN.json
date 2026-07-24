@@ -53,7 +53,7 @@
             },
             "import_dialog": {
                 "change_warning": "导入行为会导致现有的 import_refs 的字段被覆盖。\n如果 CSV 文件中存在 import_ref，则将使用 CSV 文件中的值更新该项。",
-                "description": "导入包含物品、标签和位置的CSV文件。更多有关信息，\n请参阅文档查看所需格式。",
+                "description": "导入包含物品、标签和位置的 CSV、TSV 或 Excel（.xlsx）文件。更多有关信息，\n请参阅文档查看所需格式。",
                 "title": "导入 CSV 文件",
                 "toast": {
                     "import_failed": "导入失败。请重新尝试。",
@@ -67,6 +67,10 @@
                 "latest_version": "最新版本",
                 "new_version_available": "有新版本发布了",
                 "new_version_available_link": "点击这里了解新版本更新内容"
+            },
+            "quick_menu": {
+                "search_placeholder": "搜索物品…",
+                "search_results": "搜索结果"
             }
         },
         "collection": {
@@ -157,6 +161,32 @@
                 "weeks": "周",
                 "years": "年",
                 "yesterday": "昨天"
+            },
+            "empty_state": {
+                "items": {
+                    "action": "重置搜索",
+                    "description": "试试调整搜索关键词或筛选条件。",
+                    "title": "未找到物品"
+                },
+                "items_empty": {
+                    "action": "创建第一件物品",
+                    "description": "添加第一件物品，开始建立你的库存。",
+                    "title": "还没有物品"
+                },
+                "locations": {
+                    "action": "创建位置",
+                    "description": "创建位置来记录物品的存放地点。",
+                    "title": "还没有位置"
+                },
+                "search_no_results": {
+                    "description": "换个关键词试试。",
+                    "title": "没有匹配结果"
+                },
+                "tags": {
+                    "action": "创建标签",
+                    "description": "创建标签来为物品添加标记和分类。",
+                    "title": "还没有标签"
+                }
             },
             "label_maker": {
                 "browser_print": "在浏览器内打印",
@@ -510,6 +540,8 @@
         "password": "密码",
         "preview": "预览",
         "quantity": "数量",
+        "low_stock_threshold": "低库存阈值",
+        "low_stock_threshold_sub": "数量低于或等于该值时收到通知，留空则不启用。",
         "read_docs": "查阅文档",
         "return_home": "回到主页",
         "save": "保存",
@@ -519,6 +551,7 @@
         "show_more": "展开",
         "sign_out": "登出",
         "submit": "提交",
+        "toggle_theme": "切换主题",
         "tags": "标签",
         "type": "类型",
         "unknown": "未知",
@@ -535,6 +568,9 @@
         "shortcut": "快捷键：{keys}"
     },
     "home": {
+        "greeting_morning": "早上好",
+        "greeting_afternoon": "下午好",
+        "greeting_evening": "晚上好",
         "quick_statistics": "快速统计",
         "recently_added": "最近加入",
         "storage_locations": "存放位置",
@@ -598,6 +634,7 @@
         "created_at": "创建时间",
         "custom_fields": "自定义字段",
         "delete_attachment_confirm": "确定要删除此附件吗？",
+        "delete_confirm": "再点一次确认删除",
         "delete_item_confirm": "确定要删除此物品吗？",
         "description": "说明",
         "details": "详情",
@@ -810,6 +847,9 @@
     },
     "menu": {
         "collection": "集合",
+        "group_overview": "概览",
+        "group_manage": "管理",
+        "group_system": "系统",
         "create_item": "物品/资产",
         "create_location": "位置",
         "create_tag": "标签",
@@ -819,7 +859,39 @@
         "profile": "用户",
         "scanner": "扫描仪",
         "search": "搜索",
-        "templates": "模板"
+        "templates": "模板",
+        "admin": "管理"
+    },
+    "admin": {
+        "actions": "操作",
+        "create_user": "新建用户",
+        "disable": "停用",
+        "disable_confirm": "确定停用账号 {email} 吗？该账号的所有登录会话将立即失效。",
+        "disabled": "已停用",
+        "enable": "启用",
+        "new_password": "新密码",
+        "search_placeholder": "按姓名或邮箱搜索…",
+        "set_password": "设置密码",
+        "set_password_title": "为 {name} 设置密码",
+        "delete_confirm": "确定删除账号 {email} 吗？其独有集合及集合内的数据将一并删除，此操作不可撤销。",
+        "delete_user": "删除用户",
+        "reset_link": "重置链接",
+        "reset_link_sub": "把这个一次性链接发给用户。链接 1 小时内有效，只能使用一次。",
+        "reset_link_title": "密码重置链接",
+        "superuser": "超管",
+        "title": "用户管理",
+        "toast": {
+            "created": "用户已创建。",
+            "create_failed": "创建用户失败。",
+            "deleted": "用户已删除。",
+            "delete_failed": "删除用户失败。",
+            "load_failed": "加载用户列表失败。",
+            "password_failed": "设置密码失败。",
+            "password_set": "密码已更新，该用户所有会话已注销。",
+            "reset_failed": "生成重置链接失败。",
+            "status_failed": "更新账号状态失败。",
+            "status_updated": "账号状态已更新。"
+        }
     },
     "pages": {
         "templates": {
@@ -878,6 +950,9 @@
         "override_locale": "覆盖日期和货币语言",
         "test": "测试",
         "theme_settings": "主题设置",
+        "theme_light": "浅色",
+        "theme_dark": "深色",
+        "theme_system": "跟随系统",
         "theme_settings_sub": "主题设置存储在浏览器的本地存储中。您可以随时更改主题。\n如果您在设置主题时遇到问题，请尝试刷新浏览器。",
         "toast": {
             "account_deleted": "您的账户已删除。",
@@ -913,8 +988,8 @@
             "bordered_labels": "标签边框",
             "generate_page": "生成标签页",
             "input_placeholder": "在此输入",
-            "instruction_1": "HomeBox 标签生成器是一个帮助您打印 Homebox 库存标签的工具。这些标签是\n预打印的设计，这样您就可以一次性打印出多张标签，并可以随时将它们粘贴到物品上",
-            "instruction_2": "因此，这些标签会打印一个 URL 的二维码以及资产ID信息来完成工作。\n如果您在 HomeBox 设置中禁用了资产ID，您仍然可以使用此工具，但资产编号将不会和任何物品相关",
+            "instruction_1": "LJJ Organizer 标签生成器是一个帮助您打印 LJJ Organizer 库存标签的工具。这些标签是\n预打印的设计，这样您就可以一次性打印出多张标签，并可以随时将它们粘贴到物品上",
+            "instruction_2": "因此，这些标签会打印一个 URL 的二维码以及资产ID信息来完成工作。\n如果您在 LJJ Organizer 设置中禁用了资产ID，您仍然可以使用此工具，但资产编号将不会和任何物品相关",
             "instruction_3": "此功能处于早期开发阶段，可能会在未来版本中发生变化，如果您有反馈，请\n在'<a href=\"https://github.com/sysadminsmedia/homebox/discussions/53\">'GitHub讨论'</a>'中提供",
             "label_height": "标签高度",
             "label_width": "标签宽度",
@@ -927,12 +1002,12 @@
             "page_width": "页面宽度",
             "print_location_row": "打印位置行",
             "qr_code_example": "二维码地址示例",
-            "replace_homebox_behavior": "替换“HomeBox”文本行为",
-            "replace_homebox_behavior_always_replace": "始终替换“HomeBox”",
-            "replace_homebox_behavior_item_no_location": "物品没有位置时替换“HomeBox”",
-            "replace_homebox_behavior_item_no_name": "物品没有名称时替换“HomeBox”",
-            "replace_homebox_behavior_item_no_name_no_location": "物品没有名称和位置时替换“HomeBox”",
-            "replace_homebox_behavior_show_homebox": "显示“HomeBox”",
+            "replace_homebox_behavior": "替换“LJJ Organizer”文本行为",
+            "replace_homebox_behavior_always_replace": "始终替换“LJJ Organizer”",
+            "replace_homebox_behavior_item_no_location": "物品没有位置时替换“LJJ Organizer”",
+            "replace_homebox_behavior_item_no_name": "物品没有名称时替换“LJJ Organizer”",
+            "replace_homebox_behavior_item_no_name_no_location": "物品没有名称和位置时替换“LJJ Organizer”",
+            "replace_homebox_behavior_show_homebox": "显示“LJJ Organizer”",
             "replace_homebox_text": "替换文本",
             "skip_first_labels": "空出前几个标签位",
             "tip_1": "这里的默认设置是\n '<a href=\"https://www.avery.com/templates/5260\">'Avery 5260标签纸'</a>'的设置，\n 你需要根据你的标签纸调整大小设置。",
@@ -1037,19 +1112,19 @@
         },
         "backups_sub": "将您的整个集合（包含实体，标签，附件和元数据）导出为便携的 zip 归档文件。您可以将归档文件还原到当前或其他服务器上新注册的空集合中。",
         "demo_mode_error": {
-            "wipe_inventory": "Homebox 处于演示模式时，无法清空库存、标签、位置和维护记录。请确认你不处于演示模式，然后再次尝试。"
+            "wipe_inventory": "LJJ Organizer 处于演示模式时，无法清空库存、标签、位置和维护记录。请确认你不处于演示模式，然后再次尝试。"
         },
         "import_export": "导入/导出",
         "import_export_set": {
             "export": "导出库存",
             "export_button": "导出清单",
-            "export_sub": "按标准CSV格式导出Homebox。这将导出库存中的所有物品。",
+            "export_sub": "按标准CSV格式导出。这将导出库存中的所有物品。",
             "import": "导入库存",
             "import_button": "导入库存",
             "import_ref_confirm": "确定要确保所有资产都有 import_ref 吗？这可能需要一段时间，且无法撤销。",
             "import_sub": "Homebox只能导入标准的CSV格式文件。当 '<code>'HB.import_ref'</code>' 列不存在时，导入将 '<b>'不会'</b>' 覆盖库存中的任何现有物品，而是作为新物品添加。若现有物品的 import_ref 与文件中某行的 '<code>'HB.import_ref'</code>' 相同，则会将新旧数据进行合并。"
         },
-        "import_export_sub": "按CSV格式导入和导出您的库存。在将库存迁移到Homebox的新实例时非常有用。",
+        "import_export_sub": "按CSV格式导入和导出您的库存。在将库存迁移到 LJJ Organizer 的新实例时非常有用。",
         "reports": "报告",
         "reports_set": {
             "asset_labels": "资产ID标签",

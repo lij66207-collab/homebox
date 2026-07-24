@@ -1,84 +1,39 @@
 import type { ComputedRef } from "vue";
-import type { DaisyTheme } from "~~/lib/data/themes";
+import type { ThemeMode } from "~/composables/use-preferences";
+
+const VALID_MODES: ThemeMode[] = ["light", "dark", "system"];
+
+export function isValidThemeMode(value: unknown): value is ThemeMode {
+  return typeof value === "string" && (VALID_MODES as string[]).includes(value);
+}
 
 export interface UseTheme {
-  theme: ComputedRef<DaisyTheme>;
-  setTheme: (theme: DaisyTheme) => void;
+  /** The selected mode: light / dark / system (follows the OS). */
+  mode: ComputedRef<ThemeMode>;
+  /** Resolved dark state after applying the system preference. */
+  isDark: ComputedRef<boolean>;
+  setTheme: (mode: ThemeMode) => void;
+  /** Toggle between explicit light and dark (opts out of "system"). */
+  toggleTheme: () => void;
 }
 
 export function useTheme(): UseTheme {
   const preferences = useViewPreferences();
-  const theme = computed(() => preferences.value.theme);
-  const htmlEl = ref<HTMLElement | null>(null);
+  const preferredDark = usePreferredDark();
 
-  const applyThemeToDom = (newTheme: DaisyTheme) => {
-    if (!htmlEl.value) {
-      return;
-    }
+  // Legacy installs may hold a removed daisyUI theme name — fall back to system.
+  const mode = computed<ThemeMode>(() =>
+    isValidThemeMode(preferences.value.theme) ? preferences.value.theme : "system"
+  );
+  const isDark = computed(() => mode.value === "dark" || (mode.value === "system" && preferredDark.value));
 
-    htmlEl.value.setAttribute("data-theme", newTheme);
-
-    const prefixedThemeClasses = Array.from(htmlEl.value.classList).filter(className => className.startsWith("theme-"));
-    if (prefixedThemeClasses.length > 0) {
-      htmlEl.value.classList.remove(...prefixedThemeClasses);
-    }
-
-    htmlEl.value.classList.remove(...themes);
-    htmlEl.value.classList.add("theme-" + newTheme);
+  const setTheme = (newMode: ThemeMode) => {
+    preferences.value.theme = newMode;
   };
 
-  const setTheme = (newTheme: DaisyTheme) => {
-    preferences.value.theme = newTheme;
+  const toggleTheme = () => {
+    setTheme(isDark.value ? "light" : "dark");
   };
 
-  onMounted(() => {
-    htmlEl.value = document.querySelector("html");
-    applyThemeToDom(theme.value);
-  });
-
-  watch(theme, newTheme => {
-    applyThemeToDom(newTheme);
-  });
-
-  return { theme, setTheme };
+  return { mode, isDark, setTheme, toggleTheme };
 }
-
-export function useIsThemeInList(list: DaisyTheme[]) {
-  const theme = useTheme();
-
-  return computed(() => {
-    return list.includes(theme.theme.value);
-  });
-}
-
-export const themes = [
-  "dark",
-  "theme-aqua",
-  "theme-black",
-  "theme-bumblebee",
-  "theme-cmyk",
-  "theme-corporate",
-  "theme-cupcake",
-  "theme-cyberpunk",
-  "theme-dracula",
-  "theme-emerald",
-  "theme-fantasy",
-  "theme-forest",
-  "theme-garden",
-  "theme-halloween",
-  "theme-light",
-  "theme-lofi",
-  "theme-luxury",
-  "theme-pastel",
-  "theme-retro",
-  "theme-synthwave",
-  "theme-valentine",
-  "theme-wireframe",
-  "theme-autumn",
-  "theme-business",
-  "theme-acid",
-  "theme-lemonade",
-  "theme-night",
-  "theme-coffee",
-  "theme-winter",
-];

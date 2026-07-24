@@ -26,7 +26,7 @@
     BreadcrumbList,
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb";
-  import { Button, ButtonGroup } from "@/components/ui/button";
+  import { Button } from "@/components/ui/button";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { Label } from "@/components/ui/label";
   import { Switch } from "@/components/ui/switch";
@@ -552,22 +552,18 @@
     }
   }
 
-  const confirm = useConfirm();
+  const { confirming: deleteConfirming, trigger: triggerDeleteConfirm } = useInlineConfirm(3000);
 
-  async function deleteItem() {
-    const confirmed = await confirm.open(t("items.delete_item_confirm"));
-
-    if (!confirmed.data) {
-      return;
-    }
-
-    const { error } = await api.items.delete(itemId.value);
-    if (error) {
-      toast.error(t("items.toast.failed_delete_item"));
-      return;
-    }
-    toast.success(t("items.toast.item_deleted"));
-    navigateTo("/home");
+  function confirmDeleteItem() {
+    triggerDeleteConfirm(async () => {
+      const { error } = await api.items.delete(itemId.value);
+      if (error) {
+        toast.error(t("items.toast.failed_delete_item"));
+        return;
+      }
+      toast.success(t("items.toast.item_deleted"));
+      navigateTo("/home");
+    });
   }
 
   async function saveAsTemplate() {
@@ -657,7 +653,7 @@
         <header :class="{ 'mb-2': item.description }">
           <div class="flex flex-wrap items-end gap-2">
             <div
-              class="mb-auto flex size-12 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+              class="mb-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20"
             >
               <MdiPackageVariant class="size-7" />
             </div>
@@ -728,9 +724,16 @@
                     {{ $t("components.template.save_as_template") }}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem class="text-destructive focus:text-destructive" @click="deleteItem">
+                  <DropdownMenuItem
+                    class="text-destructive focus:text-destructive"
+                    :class="{
+                      'bg-destructive text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground':
+                        deleteConfirming,
+                    }"
+                    @select.prevent="confirmDeleteItem"
+                  >
                     <MdiDelete class="mr-2 size-4" />
-                    {{ $t("global.delete") }}
+                    {{ deleteConfirming ? $t("items.delete_confirm") : $t("global.delete") }}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -744,19 +747,21 @@
       </Card>
 
       <div class="mb-6 mt-3 flex flex-wrap items-center justify-between">
-        <ButtonGroup>
-          <Button
+        <div class="inline-flex rounded-full bg-muted p-1">
+          <NuxtLink
             v-for="tab in tabs"
             :key="tab.id"
-            as-child
-            :variant="tab.to === currentPath ? 'default' : 'outline'"
-            size="sm"
+            :to="tab.to"
+            class="rounded-full px-4 py-1.5 text-sm transition-all duration-200 ease-out-expo"
+            :class="
+              tab.to === currentPath
+                ? 'bg-background font-medium text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            "
           >
-            <NuxtLink :to="tab.to">
-              {{ $t(tab.name) }}
-            </NuxtLink>
-          </Button>
-        </ButtonGroup>
+            {{ $t(tab.name) }}
+          </NuxtLink>
+        </div>
       </div>
     </section>
 
@@ -816,7 +821,11 @@
               <button v-for="(img, i) in photos" :key="i" @click="openImageDialog(img, item.id)">
                 <picture>
                   <source :srcset="img.originalSrc" :type="img.originalType" />
-                  <img class="max-h-[200px] rounded" :src="img.thumbnailSrc" :alt="$t('items.attachment_image')" />
+                  <img
+                    class="img-fade-in max-h-[200px] rounded-lg transition-transform duration-200 ease-out-expo hover:scale-105"
+                    :src="img.thumbnailSrc"
+                    :alt="$t('items.attachment_image')"
+                  />
                 </picture>
               </button>
             </div>

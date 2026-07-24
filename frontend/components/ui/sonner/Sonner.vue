@@ -10,6 +10,7 @@
     class="toaster group"
     v-bind="props"
     rich-colors
+    position="bottom-right"
     :visible-toasts="10"
     :toast-options="{
       classes: {

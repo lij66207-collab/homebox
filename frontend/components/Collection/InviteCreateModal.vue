@@ -37,7 +37,6 @@
   import { Label } from "~/components/ui/label";
   import { toast } from "@/components/ui/sonner";
   import { useUserApi } from "~/composables/use-api";
-  import { darkThemes } from "~/lib/data/themes";
 
   const { t } = useI18n();
   const { activeDialog, closeDialog } = useDialog();
@@ -49,7 +48,7 @@
     expiresAt: defaultExpiry(),
   });
 
-  const isDark = useIsThemeInList(darkThemes);
+  const { isDark } = useTheme();
 
   const formatDateTime = (date: Date | string | number) => fmtDate(date, "human", "datetime");
 

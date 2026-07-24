@@ -18,6 +18,12 @@
   }>();
 
   const selectedCount = computed(() => props.table.getSelectedRowModel().rows.length);
+
+  // .stagger-item uses fill-mode "both", which would keep overriding transforms
+  // (e.g. hover scale) after the entrance finishes — remove it on animation end.
+  function removeStaggerClass(event: AnimationEvent) {
+    (event.currentTarget as HTMLElement).classList.remove("stagger-item");
+  }
 </script>
 
 <template>
@@ -56,11 +62,14 @@
   </div>
   <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
     <ItemCard
-      v-for="item in table.getRowModel().rows"
+      v-for="(item, index) in table.getRowModel().rows"
       :key="item.original.id"
+      class="stagger-item"
+      :style="{ '--i': Math.min(index, 10) }"
       :item="item.original"
       :table-row="preferences.quickActions.enabled ? item : undefined"
       :location-flat-tree="locationFlatTree"
+      @animationend="removeStaggerClass"
     />
   </div>
 </template>

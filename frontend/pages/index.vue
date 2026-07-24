@@ -24,7 +24,7 @@
   const { t } = useI18n();
 
   useHead({
-    title: "HomeBox | " + t("index.title"),
+    title: "LJJ Organizer | " + t("index.title"),
   });
 
   definePageMeta({
@@ -78,20 +78,6 @@
       loginWithOIDC();
     }
   });
-
-  const isEvilAccentTheme = useIsThemeInList([
-    "bumblebee",
-    "corporate",
-    "forest",
-    "pastel",
-    "wireframe",
-    "black",
-    "dracula",
-    "autumn",
-    "acid",
-  ]);
-  const isEvilForegroundTheme = useIsThemeInList(["light", "aqua", "fantasy", "autumn", "night"]);
-  const isLofiTheme = useIsThemeInList(["lofi"]);
 
   const route = useRoute();
   const router = useRouter();
@@ -221,42 +207,17 @@
 </script>
 
 <template>
-  <div class="relative flex min-h-screen flex-col">
-    <div class="pointer-events-none absolute top-0 z-0 min-w-full fill-primary">
-      <div class="flex min-h-[20vh] flex-col bg-primary" />
-      <svg
-        class="fill-primary drop-shadow-xl"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 1440 320"
-        preserveAspectRatio="none"
-      >
-        <path
-          fill-opacity="1"
-          d="M0,32L80,69.3C160,107,320,181,480,181.3C640,181,800,107,960,117.3C1120,128,1280,224,1360,272L1440,320L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"
-        />
-      </svg>
-    </div>
+  <div
+    class="relative flex min-h-screen flex-col bg-background bg-[radial-gradient(60rem_40rem_at_15%_-10%,hsl(var(--primary)/0.14),transparent),radial-gradient(50rem_36rem_at_110%_110%,hsl(var(--primary)/0.10),transparent)]"
+  >
     <div class="relative z-10">
-      <header
-        class="mx-auto p-4 sm:flex sm:items-end sm:p-6 lg:p-14"
-        :class="{
-          'text-accent': !isEvilAccentTheme,
-          'text-white': isLofiTheme,
-        }"
-      >
+      <header class="mx-auto p-4 text-foreground sm:flex sm:items-end sm:p-6 lg:p-14">
         <div class="z-10">
-          <h2 class="mt-1 flex text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            HomeB
-            <AppLogo class="-mb-4 w-12" />
-            x
+          <h2 class="mt-1 flex items-center gap-3 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            <AppLogo class="w-12 sm:w-14" />
+            <span>LJJ Organizer</span>
           </h2>
-          <p
-            class="ml-1 text-lg"
-            :class="{
-              'text-foreground': !isEvilForegroundTheme,
-              'text-white': isLofiTheme,
-            }"
-          >
+          <p class="ml-1 text-lg text-muted-foreground">
             {{ $t("index.tagline") }}
           </p>
         </div>
@@ -302,11 +263,11 @@
           </div>
         </TooltipProvider>
       </header>
-      <div class="grid min-h-[50vh] p-6 sm:place-items-center">
+      <div class="grid min-h-[50vh] animate-fade-in-up p-6 sm:place-items-center">
         <div>
           <Transition name="slide-fade">
             <form v-if="registerForm" id="register-form" name="register" method="post" @submit.prevent="registerUser">
-              <Card class="md:w-[500px]">
+              <Card class="shadow-overlay md:w-[500px]">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
                     <MdiAccount class="mr-1 size-7" />
@@ -366,7 +327,7 @@
               </Card>
             </form>
             <form v-else id="login-form" name="login" method="post" @submit.prevent="login">
-              <Card class="md:w-[500px]">
+              <Card class="shadow-overlay md:w-[500px]">
                 <CardHeader>
                   <CardTitle class="flex items-center gap-2">
                     <MdiAccount class="mr-1 size-7" />

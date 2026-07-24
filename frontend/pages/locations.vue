@@ -12,8 +12,13 @@
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
   import LocationTreeRoot from "~/components/Location/Tree/Root.vue";
   import BaseCard from "@/components/Base/Card.vue";
+  import EmptyState from "~/components/global/EmptyState.vue";
+  import { useDialog } from "@/components/ui/dialog-provider";
+  import { DialogID } from "~/components/ui/dialog-provider/utils";
 
   const { t } = useI18n();
+
+  const { openDialog } = useDialog();
 
   // TODO: eventually move to https://reka-ui.com/docs/components/tree#draggable-sortable-tree
 
@@ -22,12 +27,12 @@
   });
 
   useHead({
-    title: "HomeBox | " + t("menu.locations"),
+    title: "LJJ Organizer | " + t("menu.locations"),
   });
 
   const api = useUserApi();
 
-  const { data: tree } = useAsyncData(async () => {
+  const { data: tree, pending: treePending } = useAsyncData(async () => {
     const { data, error } = await api.items.getTree({
       withItems: true,
     });
@@ -38,6 +43,8 @@
 
     return data;
   });
+
+  const treeEmpty = computed(() => !tree.value || tree.value.length === 0);
 
   const locationTreeId = "locationTree";
   const showItemsKey = "showItems";
@@ -158,8 +165,16 @@
     </div>
     <BaseCard>
       <div class="p-2">
+        <EmptyState
+          v-if="!treePending && treeEmpty"
+          icon="map-marker-off"
+          :title="$t('components.global.empty_state.locations.title')"
+          :description="$t('components.global.empty_state.locations.description')"
+          :action-label="$t('components.global.empty_state.locations.action')"
+          @action="openDialog(DialogID.CreateEntity, { params: { baseType: 'location' } })"
+        />
         <LocationTreeRoot
-          v-if="tree && Array.isArray(tree)"
+          v-else-if="tree && Array.isArray(tree)"
           :locs="tree"
           :tree-id="locationTreeId"
           :show-items="showItems"

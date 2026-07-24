@@ -2,7 +2,7 @@
   import { useI18n } from "vue-i18n";
   import BaseContainer from "@/components/Base/Container.vue";
   import { Card } from "@/components/ui/card";
-  import { Button, ButtonGroup } from "@/components/ui/button";
+  import { Button } from "@/components/ui/button";
   import { toast } from "@/components/ui/sonner";
 
   import MdiAccountMultiple from "~icons/mdi/account-multiple";
@@ -21,7 +21,7 @@
 
   const { t } = useI18n();
 
-  useHead({ title: `HomeBox | ${t("menu.collection")}` });
+  useHead({ title: `LJJ Organizer | ${t("menu.collection")}` });
 
   const route = useRoute();
   const api = useUserApi();
@@ -222,20 +222,22 @@
       </Card>
 
       <div class="my-3 flex flex-wrap items-center justify-between gap-2">
-        <ButtonGroup>
-          <Button
+        <div class="inline-flex rounded-full bg-muted p-1">
+          <NuxtLink
             v-for="tab in tabs"
             :key="tab.id"
-            as-child
-            :variant="tab.to === currentPath ? 'default' : 'outline'"
-            size="sm"
+            :to="tab.to"
+            class="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ease-out-expo"
+            :class="
+              tab.to === currentPath
+                ? 'bg-background font-medium text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            "
           >
-            <NuxtLink :to="tab.to" class="flex items-center gap-2">
-              <component :is="tab.icon" v-if="tab.icon" class="size-4" />
-              <span class="hidden sm:block">{{ t(tab.label) }}</span>
-            </NuxtLink>
-          </Button>
-        </ButtonGroup>
+            <component :is="tab.icon" v-if="tab.icon" class="size-4" />
+            <span class="hidden sm:block">{{ t(tab.label) }}</span>
+          </NuxtLink>
+        </div>
 
         <div id="collection-header-actions" class="ml-auto flex items-center gap-1">
           <Button

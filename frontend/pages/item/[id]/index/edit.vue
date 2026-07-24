@@ -95,6 +95,15 @@
 
   const saving = ref(false);
 
+  // Low stock threshold is nullable; the number input needs an empty-string
+  // representation for "not set".
+  const lowStockThresholdProxy = computed({
+    get: () => item.value?.lowStockThreshold ?? "",
+    set: v => {
+      item.value.lowStockThreshold = v === "" || v === null || Number.isNaN(Number(v)) ? null : Number(v);
+    },
+  });
+
   async function saveItem(redirect: boolean) {
     if (!location.value?.id && !parent.value?.id) {
       toast.error(t("items.toast.failed_save_no_location"));
@@ -752,6 +761,17 @@
                   inline
                 />
               </div>
+            </div>
+            <div class="border-b px-4 pb-4 pt-2 sm:px-6">
+              <FormTextField
+                v-model.number="lowStockThresholdProxy"
+                type="number"
+                step="any"
+                :min="0"
+                :label="$t('items.low_stock_threshold')"
+                inline
+              />
+              <p class="px-1 pt-1 text-xs text-muted-foreground">{{ $t("items.low_stock_threshold_sub") }}</p>
             </div>
           </div>
         </BaseCard>

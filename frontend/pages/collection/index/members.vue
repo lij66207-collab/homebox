@@ -13,7 +13,7 @@
 
   const { t } = useI18n();
 
-  useHead({ title: `HomeBox | ${t("collection.tabs.members")}` });
+  useHead({ title: `LJJ Organizer | ${t("collection.tabs.members")}` });
 
   const api = useUserApi();
   const auth = useAuthContext();

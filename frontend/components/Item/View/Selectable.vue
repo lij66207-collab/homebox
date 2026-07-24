@@ -9,6 +9,7 @@
   import DataTable from "./table/data-table.vue";
   import { makeColumns } from "./table/columns";
   import { useI18n } from "vue-i18n";
+  import { useMediaQuery } from "@vueuse/core";
   import type { Pagination } from "./pagination";
   import MaintenanceEditModal from "@/components/Maintenance/EditModal.vue";
   import ItemChangeDetails from "./ItemChangeDetails.vue";
@@ -39,7 +40,11 @@
     return !!props.view;
   });
 
+  const isMobileViewport = useMediaQuery("(max-width: 767px)");
+
   const itemView = computed(() => {
+    // On mobile viewports always use the card view, regardless of the saved preference
+    if (isMobileViewport.value) return "card";
     return props.view ?? preferences.value.itemDisplayView;
   });
 

@@ -21,7 +21,7 @@
 
   const { t } = useI18n();
 
-  useHead({ title: `HomeBox | ${t("collection.tabs.invites")}` });
+  useHead({ title: `LJJ Organizer | ${t("collection.tabs.invites")}` });
 
   const api = useUserApi();
   const { openDialog } = useDialog();

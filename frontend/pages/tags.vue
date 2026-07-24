@@ -10,6 +10,9 @@
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
   import BaseCard from "@/components/Base/Card.vue";
   import TagTreeRoot from "~/components/Tag/Tree/Root.vue";
+  import EmptyState from "~/components/global/EmptyState.vue";
+  import { useDialog } from "@/components/ui/dialog-provider";
+  import { DialogID } from "~/components/ui/dialog-provider/utils";
   import type { TagTreeItem } from "~/components/Tag/Tree/types";
 
   definePageMeta({
@@ -18,13 +21,15 @@
 
   const { t } = useI18n();
 
+  const { openDialog } = useDialog();
+
   useHead({
-    title: "HomeBox | " + t("global.tags"),
+    title: "LJJ Organizer | " + t("global.tags"),
   });
 
   const api = useUserApi();
 
-  const { data: allTags } = useAsyncData(async () => {
+  const { data: allTags, pending: tagsPending } = useAsyncData(async () => {
     const { data, error } = await api.tags.getAll();
 
     if (error) {
@@ -158,7 +163,15 @@
 
     <BaseCard>
       <div class="p-2">
-        <TagTreeRoot v-if="tree && Array.isArray(tree)" :tags="tree" :tree-id="tagTreeId" />
+        <EmptyState
+          v-if="!tagsPending && tree.length === 0"
+          icon="tag-off"
+          :title="$t('components.global.empty_state.tags.title')"
+          :description="$t('components.global.empty_state.tags.description')"
+          :action-label="$t('components.global.empty_state.tags.action')"
+          @action="openDialog(DialogID.CreateTag)"
+        />
+        <TagTreeRoot v-else-if="tree && Array.isArray(tree)" :tags="tree" :tree-id="tagTreeId" />
       </div>
     </BaseCard>
   </BaseContainer>

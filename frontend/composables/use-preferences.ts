@@ -1,6 +1,7 @@
 import type { Ref } from "vue";
 import type { EntitySummary } from "~/lib/api/types/data-contracts";
-import type { DaisyTheme } from "~~/lib/data/themes";
+
+export type ThemeMode = "light" | "dark" | "system";
 
 export type ViewType = "table" | "card";
 
@@ -16,7 +17,7 @@ export type LocationViewPreferences = {
   showEmpty: boolean;
   editorAdvancedView: boolean;
   itemDisplayView: ViewType;
-  theme: DaisyTheme;
+  theme: ThemeMode;
   itemsPerTablePage: number;
   tableHeaders?: {
     value: keyof EntitySummary;
@@ -40,7 +41,7 @@ const DEFAULT_PREFERENCES: LocationViewPreferences = {
   showEmpty: true,
   editorAdvancedView: false,
   itemDisplayView: "card",
-  theme: "homebox",
+  theme: "system",
   itemsPerTablePage: 10,
   displayLegacyHeader: false,
   legacyImageFit: false,

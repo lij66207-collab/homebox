@@ -18,22 +18,20 @@
     <CollectionInviteCreateModal />
     <SidebarProvider :default-open="sidebarState">
       <Sidebar collapsible="icon">
-        <SidebarHeader class="items-center">
-          <SidebarGroupLabel class="text-base group-data-[collapsible=icon]:hidden">{{
-            $t("global.welcome", { username: username })
-          }}</SidebarGroupLabel>
-          <NuxtLink class="group-data-[collapsible=icon]:hidden" to="/home">
-            <div class="flex size-24 items-center justify-center rounded-full bg-background-accent p-4">
+        <SidebarHeader class="gap-3 px-3 pt-4">
+          <NuxtLink to="/home" class="flex items-center gap-2.5 px-1 group-data-[collapsible=icon]:justify-center">
+            <div
+              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 p-1.5 text-primary dark:bg-primary/20"
+            >
               <AppLogo />
             </div>
+            <span class="text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">LJJ Organizer</span>
           </NuxtLink>
-
-          <CollectionSelector />
 
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <SidebarMenuButton
-                class="flex justify-center bg-primary text-primary-foreground drop-shadow-md hover:bg-primary/90 active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-start"
+                class="flex h-10 justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 active:scale-[0.98] active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-start"
                 :tooltip="$t('global.create')"
                 :hotkey="$t('global.shortcut', { keys: 'Ctrl+`' })"
               >
@@ -72,17 +70,25 @@
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <CollectionSelector />
         </SidebarHeader>
 
         <SidebarContent>
-          <SidebarGroup>
+          <SidebarGroup v-for="group in navGroups" :key="group.id">
+            <SidebarGroupLabel
+              class="text-[11px] font-medium uppercase tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden"
+            >
+              {{ $t(group.label) }}
+            </SidebarGroupLabel>
             <SidebarMenu>
-              <template v-for="n in nav" :key="n.id">
+              <template v-for="n in group.items" :key="n.id">
                 <SidebarMenuItem v-if="!n.collapsible" :key="n.id">
                   <SidebarMenuLink
                     :href="n.to"
+                    class="rounded-full transition-colors duration-200"
                     :class="{
-                      'bg-accent text-accent-foreground': n.active?.value,
+                      'bg-primary/10 font-medium text-primary dark:bg-primary/20': n.active?.value,
                       'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
                     }"
                     :tooltip="n.name.value"
@@ -97,8 +103,9 @@
                     <SidebarMenuItem class="flex gap-1">
                       <SidebarMenuLink
                         :href="n.to"
+                        class="rounded-full transition-colors duration-200"
                         :class="{
-                          'bg-accent text-accent-foreground': n.active?.value,
+                          'bg-primary/10 font-medium text-primary dark:bg-primary/20': n.active?.value,
                           'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
                         }"
                         :tooltip="n.name.value"
@@ -119,8 +126,9 @@
                         <SidebarMenuSubItem v-for="c in n.collapsible" :key="c.id">
                           <SidebarMenuLink
                             :href="c.to"
+                            class="rounded-full transition-colors duration-200"
                             :class="{
-                              'bg-accent text-accent-foreground': c.active?.value,
+                              'bg-primary/10 font-medium text-primary dark:bg-primary/20': c.active?.value,
                               'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
                               'h-min py-0': true,
                             }"
@@ -136,7 +144,7 @@
               </template>
 
               <!-- makes scanner accessible easily if using legacy header -->
-              <SidebarMenuItem v-if="preferences.displayLegacyHeader">
+              <SidebarMenuItem v-if="preferences.displayLegacyHeader && group.id === 'system'">
                 <SidebarMenuButton
                   :class="{
                     'text-nowrap': typeof locale === 'string' && locale.startsWith('zh-'),
@@ -153,84 +161,115 @@
         </SidebarContent>
 
         <SidebarFooter>
-          <SidebarMenuButton
-            class="flex justify-center group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:bg-destructive group-data-[collapsible=icon]:text-destructive-foreground group-data-[collapsible=icon]:shadow-sm group-data-[collapsible=icon]:hover:bg-destructive/90"
-            :tooltip="$t('global.sign_out')"
-            data-testid="logout-button"
-            @click="logout"
+          <div class="flex items-center gap-2 rounded-xl p-1 group-data-[collapsible=icon]:justify-center">
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary dark:bg-primary/25"
+            >
+              {{ username.charAt(0).toUpperCase() }}
+            </div>
+            <p class="min-w-0 flex-1 truncate text-sm font-medium group-data-[collapsible=icon]:hidden">
+              {{ username }}
+            </p>
+            <SidebarMenuButton
+              class="size-8 shrink-0 grow-0"
+              :tooltip="$t('global.sign_out')"
+              data-testid="logout-button"
+              @click="logout"
+            >
+              <MdiLogout />
+            </SidebarMenuButton>
+          </div>
+          <p
+            v-if="status"
+            class="px-2 pb-1 text-center text-xs text-muted-foreground group-data-[collapsible=icon]:hidden"
           >
-            <MdiLogout />
-            <span>
-              {{ $t("global.sign_out") }}
-            </span>
-          </SidebarMenuButton>
+            <span
+              v-html="
+                DOMPurify.sanitize(
+                  $t('global.footer.version_link', {
+                    version: status.build.version.replace(/^v/, ''),
+                    build: status.build.commit,
+                  })
+                )
+              "
+            />
+            ~
+            <span v-html="DOMPurify.sanitize($t('global.footer.api_link'))" />
+          </p>
         </SidebarFooter>
 
         <SidebarRail />
       </Sidebar>
       <SidebarInset class="min-h-dvh max-w-full overflow-hidden bg-background-accent">
-        <div class="relative flex h-full flex-col justify-center">
+        <div class="relative flex min-h-dvh flex-col pb-20 md:pb-0">
           <div v-if="preferences.displayLegacyHeader">
             <AppHeaderDecor class="-mt-10 hidden lg:block" />
             <SidebarTrigger class="absolute left-2 top-2 hidden lg:flex" variant="default" />
           </div>
           <!-- IMPORTANT: if you change the height of this div, alter the top value in the item edit page-->
           <div
-            class="sticky top-0 z-20 flex h-[var(--header-height-mobile)] translate-y-[-0.5px] flex-col bg-secondary p-2 shadow-md sm:h-[var(--header-height)] sm:flex-row"
+            class="sticky top-0 z-20 flex h-[var(--header-height)] translate-y-[-0.5px] items-center gap-2 border-b bg-background/80 px-3 backdrop-blur"
             :class="{
               'lg:hidden': preferences.displayLegacyHeader,
             }"
           >
-            <div class="flex h-1/2 items-center gap-2 sm:h-auto">
-              <SidebarTrigger variant="default" />
-              <NuxtLink to="/home">
-                <AppHeaderText class="h-6" />
-              </NuxtLink>
-            </div>
-            <div class="sm:grow" />
-            <div class="flex h-1/2 grow items-center justify-end gap-2 sm:h-auto">
+            <SidebarTrigger variant="default" />
+            <h1 class="truncate text-lg font-semibold tracking-tight">{{ pageTitle }}</h1>
+            <div class="grow" />
+            <div class="hidden items-center gap-2 sm:flex">
               <Input
                 v-model:model-value="search"
-                class="h-9 grow sm:max-w-sm"
+                class="h-9 w-52 rounded-full lg:w-64"
                 :placeholder="$t('global.search')"
                 type="search"
                 @keyup.enter="triggerSearch"
               />
-              <div>
-                <Button size="icon" @click="triggerSearch">
-                  <MdiMagnify />
-                </Button>
-              </div>
-              <div>
-                <Button size="icon" @click="openScanner">
-                  <MdiQrcodeScan />
-                </Button>
-              </div>
+              <Button size="icon" class="rounded-full" :aria-label="$t('global.search')" @click="triggerSearch">
+                <MdiMagnify />
+              </Button>
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              class="rounded-full"
+              :aria-label="$t('menu.scanner')"
+              @click="openScanner"
+            >
+              <MdiQrcodeScan />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              class="rounded-full"
+              :aria-label="$t('global.toggle_theme')"
+              @click="toggleTheme"
+            >
+              <MdiMoonWaningCrescent v-if="!isDark" class="transition-transform duration-300 hover:rotate-12" />
+              <MdiWhiteBalanceSunny v-else class="transition-transform duration-300 hover:rotate-45" />
+            </Button>
+          </div>
+
+          <div v-if="breadcrumbs.length > 0" class="hidden px-4 py-2 text-sm md:block">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <template v-for="(crumb, index) in breadcrumbs" :key="index">
+                  <BreadcrumbItem>
+                    <BreadcrumbLink v-if="crumb.to" as-child>
+                      <NuxtLink :to="crumb.to">{{ crumb.label }}</NuxtLink>
+                    </BreadcrumbLink>
+                    <BreadcrumbPage v-else>{{ crumb.label }}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator v-if="index < breadcrumbs.length - 1" />
+                </template>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
 
           <slot />
-          <div class="grow" />
-
-          <footer v-if="status" class="bottom-0 w-full pb-4 text-center">
-            <p class="text-center text-sm">
-              <span
-                v-html="
-                  DOMPurify.sanitize(
-                    $t('global.footer.version_link', {
-                      version: status.build.version.replace(/^v/, ''),
-                      build: status.build.commit,
-                    })
-                  )
-                "
-              />
-              ~
-              <span v-html="DOMPurify.sanitize($t('global.footer.api_link'))" />
-            </p>
-          </footer>
         </div>
       </SidebarInset>
     </SidebarProvider>
+    <AppMobileTabBar />
   </div>
 </template>
 
@@ -251,6 +290,9 @@
   import MdiWrench from "~icons/mdi/wrench";
   import MdiPlus from "~icons/mdi/plus";
   import MdiLogout from "~icons/mdi/logout";
+  import MdiMoonWaningCrescent from "~icons/mdi/moon-waning-crescent";
+  import MdiWhiteBalanceSunny from "~icons/mdi/white-balance-sunny";
+  import MdiShieldAccount from "~icons/mdi/shield-account";
   import MdiFileDocumentMultiple from "~icons/mdi/file-document-multiple";
   import MdiChevronRight from "~icons/mdi/chevron-right";
 
@@ -279,6 +321,14 @@
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
   import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+  import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+  } from "@/components/ui/breadcrumb";
   import { Shortcut } from "~/components/ui/shortcut";
   import { useDialog } from "~/components/ui/dialog-provider";
   import { Input } from "~/components/ui/input";
@@ -292,10 +342,10 @@
   import TagCreateModal from "~/components/Tag/CreateModal.vue";
   import ItemBarcodeModal from "~/components/Item/BarcodeModal.vue";
   import AppQuickMenuModal from "~/components/App/QuickMenuModal.vue";
+  import AppMobileTabBar from "~/components/App/MobileTabBar.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
   import AppLogo from "~/components/App/Logo.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
-  import AppHeaderText from "~/components/App/HeaderText.vue";
   import CollectionSelector from "~/components/Collection/Selector.vue";
   import CollectionCreateModal from "~/components/Collection/CreateModal.vue";
   import CollectionJoinModal from "~/components/Collection/JoinModal.vue";
@@ -304,7 +354,11 @@
   const { t, locale } = useI18n();
   const username = computed(() => authCtx.user?.name || "User");
 
+  const { isDark, toggleTheme } = useTheme();
+
   const { openDialog } = useDialog();
+
+  const authCtx = useAuthContext();
 
   const preferences = useViewPreferences();
 
@@ -385,7 +439,7 @@
   const route = useRoute();
   const router = useRouter();
 
-  const nav: {
+  type NavItem = {
     icon: Component;
     active: ComputedRef<boolean>;
     id: number;
@@ -397,102 +451,149 @@
       name: ComputedRef<string>;
       to: string;
     }[];
-  }[] = [
-    {
-      icon: MdiHome,
-      active: computed(() => route.path === "/home"),
-      id: 0,
-      name: computed(() => t("menu.home")),
-      to: "/home",
-    },
-    {
-      icon: MdiFileTree,
-      id: 1,
-      active: computed(() => route.path === "/locations"),
-      name: computed(() => t("menu.locations")),
-      to: "/locations",
-    },
-    {
-      icon: MdiTagMultiple,
-      id: 2,
-      active: computed(() => route.path === "/tags"),
-      name: computed(() => t("global.tags")),
-      to: "/tags",
-    },
-    {
-      icon: MdiMagnify,
-      id: 3,
-      active: computed(() => route.path === "/items"),
-      name: computed(() => t("menu.search")),
-      to: "/items",
-    },
-    {
-      icon: MdiFileDocumentMultiple,
-      id: 4,
-      active: computed(() => route.path === "/templates"),
-      name: computed(() => t("menu.templates")),
-      to: "/templates",
-    },
-    {
-      icon: MdiWrench,
-      id: 5,
-      active: computed(() => route.path === "/maintenance"),
-      name: computed(() => t("menu.maintenance")),
-      to: "/maintenance",
-    },
-    {
-      icon: MdiAccount,
-      id: 6,
-      active: computed(() => route.path === "/profile"),
-      name: computed(() => t("menu.profile")),
-      to: "/profile",
-    },
-    {
-      icon: MdiCog,
-      id: 7,
-      active: computed(() => route.path.includes("/collection")),
-      name: computed(() => t("menu.collection")),
-      to: "/collection/members",
-      collapsible: [
-        {
-          id: 61,
-          active: computed(() => route.path === "/collection/members"),
-          name: computed(() => t("collection.tabs.members")),
-          to: "/collection/members",
-        },
-        {
-          id: 62,
-          active: computed(() => route.path === "/collection/invites"),
-          name: computed(() => t("collection.tabs.invites")),
-          to: "/collection/invites",
-        },
-        {
-          id: 63,
-          active: computed(() => route.path === "/collection/notifiers"),
-          name: computed(() => t("collection.tabs.notifiers")),
-          to: "/collection/notifiers",
-        },
-        {
-          id: 64,
-          active: computed(() => route.path === "/collection/settings"),
-          name: computed(() => t("collection.tabs.settings")),
-          to: "/collection/settings",
-        },
-        {
-          id: 65,
-          active: computed(() => route.path === "/collection/entity-types"),
-          name: computed(() => t("collection.tabs.entity_types")),
-          to: "/collection/entity-types",
-        },
-        {
-          id: 66,
-          active: computed(() => route.path === "/collection/tools"),
-          name: computed(() => t("collection.tabs.tools")),
-          to: "/collection/tools",
-        },
-      ],
-    },
-  ];
+  };
+
+  const navGroups = computed<{ id: string; label: string; items: NavItem[] }[]>(() => {
+    const groups: { id: string; label: string; items: NavItem[] }[] = [
+      {
+        id: "overview",
+        label: "menu.group_overview",
+        items: [
+          {
+            icon: MdiHome,
+            active: computed(() => route.path === "/home"),
+            id: 0,
+            name: computed(() => t("menu.home")),
+            to: "/home",
+          },
+          {
+            icon: MdiMagnify,
+            id: 3,
+            active: computed(() => route.path === "/items"),
+            name: computed(() => t("menu.search")),
+            to: "/items",
+          },
+        ],
+      },
+      {
+        id: "manage",
+        label: "menu.group_manage",
+        items: [
+          {
+            icon: MdiFileTree,
+            id: 1,
+            active: computed(() => route.path === "/locations"),
+            name: computed(() => t("menu.locations")),
+            to: "/locations",
+          },
+          {
+            icon: MdiTagMultiple,
+            id: 2,
+            active: computed(() => route.path === "/tags"),
+            name: computed(() => t("global.tags")),
+            to: "/tags",
+          },
+          {
+            icon: MdiFileDocumentMultiple,
+            id: 4,
+            active: computed(() => route.path === "/templates"),
+            name: computed(() => t("menu.templates")),
+            to: "/templates",
+          },
+          {
+            icon: MdiWrench,
+            id: 5,
+            active: computed(() => route.path === "/maintenance"),
+            name: computed(() => t("menu.maintenance")),
+            to: "/maintenance",
+          },
+        ],
+      },
+      {
+        id: "system",
+        label: "menu.group_system",
+        items: [
+          {
+            icon: MdiCog,
+            id: 7,
+            active: computed(() => route.path.includes("/collection")),
+            name: computed(() => t("menu.collection")),
+            to: "/collection/members",
+            collapsible: [
+              {
+                id: 61,
+                active: computed(() => route.path === "/collection/members"),
+                name: computed(() => t("collection.tabs.members")),
+                to: "/collection/members",
+              },
+              {
+                id: 62,
+                active: computed(() => route.path === "/collection/invites"),
+                name: computed(() => t("collection.tabs.invites")),
+                to: "/collection/invites",
+              },
+              {
+                id: 63,
+                active: computed(() => route.path === "/collection/notifiers"),
+                name: computed(() => t("collection.tabs.notifiers")),
+                to: "/collection/notifiers",
+              },
+              {
+                id: 64,
+                active: computed(() => route.path === "/collection/settings"),
+                name: computed(() => t("collection.tabs.settings")),
+                to: "/collection/settings",
+              },
+              {
+                id: 65,
+                active: computed(() => route.path === "/collection/entity-types"),
+                name: computed(() => t("collection.tabs.entity_types")),
+                to: "/collection/entity-types",
+              },
+              {
+                id: 66,
+                active: computed(() => route.path === "/collection/tools"),
+                name: computed(() => t("collection.tabs.tools")),
+                to: "/collection/tools",
+              },
+            ],
+          },
+          {
+            icon: MdiAccount,
+            id: 6,
+            active: computed(() => route.path === "/profile"),
+            name: computed(() => t("menu.profile")),
+            to: "/profile",
+          },
+        ],
+      },
+    ];
+
+    if (authCtx.user?.isSuperuser) {
+      groups
+        .find(g => g.id === "system")!
+        .items.push({
+          icon: MdiShieldAccount,
+          id: 8,
+          active: computed(() => route.path.startsWith("/admin")),
+          name: computed(() => t("menu.admin")),
+          to: "/admin",
+        });
+    }
+
+    return groups;
+  });
+
+  const pageTitle = computed(() => {
+    const path = route.path;
+    const segments = path.split("/").filter(Boolean);
+    const labelKey = staticCrumbLabels[segments[0] ?? ""];
+    if (labelKey) return t(labelKey);
+    if (segments[0] === "item") return t("global.item");
+    if (segments[0] === "location") return t("menu.locations");
+    if (segments[0] === "tag") return t("global.tags");
+    return "LJJ Organizer";
+  });
 
   const quickMenuActions = reactive([
     ...dropdown.map(v => ({
@@ -502,11 +603,13 @@
       id: v.id,
       type: "create" as const,
     })),
-    ...nav.map(v => ({
-      text: computed(() => v.name.value),
-      href: v.to,
-      type: "navigate" as const,
-    })),
+    ...navGroups.value
+      .flatMap(g => g.items)
+      .map(v => ({
+        text: computed(() => v.name.value),
+        href: v.to,
+        type: "navigate" as const,
+      })),
   ]);
 
   const tagStore = useTagStore();
@@ -517,6 +620,65 @@
 
   const entityTypeStore = useEntityTypeStore();
   entityTypeStore.ensureFetched();
+
+  type BreadcrumbEntry = {
+    label: string;
+    to?: string;
+  };
+
+  const staticCrumbLabels: Record<string, string> = {
+    home: "menu.home",
+    items: "menu.search",
+    locations: "menu.locations",
+    tags: "global.tags",
+    profile: "menu.profile",
+    maintenance: "menu.maintenance",
+    templates: "menu.templates",
+    collection: "menu.collection",
+    admin: "menu.admin",
+  };
+
+  const breadcrumbs = computed<BreadcrumbEntry[]>(() => {
+    const path = route.path;
+    if (path === "/home" || path === "/") return [];
+
+    const segments = path.split("/").filter(Boolean);
+    if (segments.length === 0) return [];
+
+    const [first, second] = segments;
+
+    // Detail pages: resolve the entity name from the stores when possible
+    if (segments.length === 2 && second) {
+      if (first === "item") {
+        return [{ label: t("menu.search"), to: "/items" }, { label: t("global.item") }];
+      }
+      if (first === "location") {
+        const location = locationStore.allLocations.find(l => l.id === second);
+        const crumbs: BreadcrumbEntry[] = [{ label: t("menu.locations"), to: "/locations" }];
+        if (location) crumbs.push({ label: location.name });
+        return crumbs;
+      }
+      if (first === "tag") {
+        const tag = tagStore.tags.find(entry => entry.id === second);
+        const crumbs: BreadcrumbEntry[] = [{ label: t("global.tags"), to: "/tags" }];
+        if (tag) crumbs.push({ label: tag.name });
+        return crumbs;
+      }
+    }
+
+    // Static pages: map known segments to their menu labels
+    const crumbs: BreadcrumbEntry[] = [];
+    segments.forEach((segment, index) => {
+      const labelKey = staticCrumbLabels[segment];
+      if (!labelKey) return;
+      const isLast = index === segments.length - 1;
+      crumbs.push({
+        label: t(labelKey),
+        to: isLast ? undefined : `/${segments.slice(0, index + 1).join("/")}`,
+      });
+    });
+    return crumbs;
+  });
 
   onMounted(() => {
     locationStore.refreshParents();
@@ -550,7 +712,6 @@
     locationStore.refreshTree();
   });
 
-  const authCtx = useAuthContext();
   const api = useUserApi();
 
   async function logout() {

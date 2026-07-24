@@ -17,7 +17,7 @@
   const { t } = useI18n();
 
   useHead({
-    title: computed(() => `HomeBox | ${t("pages.templates.title")}`),
+    title: computed(() => `LJJ Organizer | ${t("pages.templates.title")}`),
   });
 
   const api = useUserApi();
