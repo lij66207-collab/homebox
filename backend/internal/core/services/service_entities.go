@@ -180,22 +180,33 @@ func serializeLocation[T ~[]string](location T) string {
 //  2. If the entity has an ImportRef and it exists it is skipped
 //  3. Locations and Tags are created if they do not exist.
 func (svc *EntityService) CsvImport(ctx context.Context, gid uuid.UUID, data io.Reader) (int, error) {
+	sheet := reporting.IOSheet{}
+	if err := sheet.Read(data); err != nil {
+		return 0, err
+	}
+
+	return svc.sheetImport(ctx, gid, &sheet)
+}
+
+// XlsxImport imports entities from an Excel (.xlsx) file. It accepts the same
+// column format as CsvImport, so the standard CSV template can be maintained
+// in Excel directly.
+func (svc *EntityService) XlsxImport(ctx context.Context, gid uuid.UUID, data io.Reader) (int, error) {
+	sheet := reporting.IOSheet{}
+	if err := sheet.ReadXLSX(data); err != nil {
+		return 0, err
+	}
+
+	return svc.sheetImport(ctx, gid, &sheet)
+}
+
+// sheetImport applies a parsed import sheet to the group's inventory. See
+// CsvImport for the rules that are applied.
+func (svc *EntityService) sheetImport(ctx context.Context, gid uuid.UUID, sheet *reporting.IOSheet) (int, error) {
 	ctx, span := entityServiceTracer().Start(ctx, "service.EntityService.CsvImport",
 		trace.WithAttributes(attribute.String("group.id", gid.String())))
 	defer span.End()
 
-	_, readSpan := entityServiceTracer().Start(ctx, "service.EntityService.CsvImport.readCsv")
-	sheet := reporting.IOSheet{}
-
-	err := sheet.Read(data)
-	if err != nil {
-		recordServiceSpanError(readSpan, err)
-		readSpan.End()
-		recordServiceSpanError(span, err)
-		return 0, err
-	}
-	readSpan.SetAttributes(attribute.Int("rows.count", len(sheet.Rows)))
-	readSpan.End()
 	span.SetAttributes(attribute.Int("rows.count", len(sheet.Rows)))
 
 	// ========================================
@@ -258,6 +269,8 @@ func (svc *EntityService) CsvImport(ctx context.Context, gid uuid.UUID, data io.
 
 	// ========================================
 	// Import entities
+
+	var err error
 
 	// Asset ID Pre-Check
 	highestAID := repo.AssetID(-1)

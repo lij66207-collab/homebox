@@ -33,6 +33,8 @@ type User struct {
 	IsSuperuser bool `json:"is_superuser,omitempty"`
 	// Superuser holds the value of the "superuser" field.
 	Superuser bool `json:"superuser,omitempty"`
+	// Disabled holds the value of the "disabled" field.
+	Disabled bool `json:"disabled,omitempty"`
 	// ActivatedOn holds the value of the "activated_on" field.
 	ActivatedOn time.Time `json:"activated_on,omitempty"`
 	// OidcIssuer holds the value of the "oidc_issuer" field.
@@ -131,7 +133,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case user.FieldSettings:
 			values[i] = new([]byte)
-		case user.FieldIsSuperuser, user.FieldSuperuser:
+		case user.FieldIsSuperuser, user.FieldSuperuser, user.FieldDisabled:
 			values[i] = new(sql.NullBool)
 		case user.FieldName, user.FieldEmail, user.FieldPassword, user.FieldOidcIssuer, user.FieldOidcSubject:
 			values[i] = new(sql.NullString)
@@ -202,6 +204,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field superuser", values[i])
 			} else if value.Valid {
 				_m.Superuser = value.Bool
+			}
+		case user.FieldDisabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field disabled", values[i])
+			} else if value.Valid {
+				_m.Disabled = value.Bool
 			}
 		case user.FieldActivatedOn:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -323,6 +331,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("superuser=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Superuser))
+	builder.WriteString(", ")
+	builder.WriteString("disabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Disabled))
 	builder.WriteString(", ")
 	builder.WriteString("activated_on=")
 	builder.WriteString(_m.ActivatedOn.Format(time.ANSIC))

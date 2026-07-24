@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"slices"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hay-kot/httpkit/errchain"
@@ -121,6 +122,15 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Get("/users/self/api-keys", chain.ToHandlerFunc(v1Ctrl.HandleUserAPIKeysList(), userMW...))
 		r.Post("/users/self/api-keys", chain.ToHandlerFunc(v1Ctrl.HandleUserAPIKeyCreate(), userMW...))
 		r.Delete("/users/self/api-keys/{id}", chain.ToHandlerFunc(v1Ctrl.HandleUserAPIKeyDelete(), userMW...))
+
+		// Admin endpoints (superuser only)
+		adminMW := append(slices.Clone(userMW), a.mwSuperuser)
+		r.Get("/admin/users", chain.ToHandlerFunc(v1Ctrl.HandleAdminUsersList(), adminMW...))
+		r.Post("/admin/users", chain.ToHandlerFunc(v1Ctrl.HandleAdminUsersCreate(), adminMW...))
+		r.Delete("/admin/users/{id}", chain.ToHandlerFunc(v1Ctrl.HandleAdminUsersDelete(), adminMW...))
+		r.Post("/admin/users/{id}/reset-link", chain.ToHandlerFunc(v1Ctrl.HandleAdminUsersResetLink(), adminMW...))
+		r.Put("/admin/users/{id}/password", chain.ToHandlerFunc(v1Ctrl.HandleAdminUsersSetPassword(), adminMW...))
+		r.Put("/admin/users/{id}/disabled", chain.ToHandlerFunc(v1Ctrl.HandleAdminUsersSetDisabled(), adminMW...))
 
 		// Group management endpoints
 		r.Get("/groups/all", chain.ToHandlerFunc(v1Ctrl.HandleGroupsGetAll(), userMW...))

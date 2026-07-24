@@ -290,6 +290,30 @@ func (a *app) mwAuthToken(next errchain.Handler) errchain.Handler {
 	})
 }
 
+// mwSuperuser is a middleware that restricts the route to superusers only.
+// Non-superuser requests are rejected with 403 Forbidden.
+//
+// WARNING: This middleware _MUST_ be called after mwAuthToken or else it will panic
+func (a *app) mwSuperuser(next errchain.Handler) errchain.Handler {
+	return errchain.HandlerFunc(func(w http.ResponseWriter, r *http.Request) error {
+		spanCtx, span := mwTracer().Start(r.Context(), "middleware.mwSuperuser")
+		defer span.End()
+
+		user := services.UseUserCtx(spanCtx)
+		if user == nil {
+			panic("mwSuperuser: user not found in context, you must call mwAuthToken before mwSuperuser")
+		}
+
+		if !user.IsSuperuser {
+			span.SetAttributes(attribute.String("superuser.outcome", "forbidden"))
+			return validate.NewRequestError(errors.New("Forbidden"), http.StatusForbidden)
+		}
+
+		span.SetAttributes(attribute.String("superuser.outcome", "ok"))
+		return next.ServeHTTP(w, r.WithContext(spanCtx))
+	})
+}
+
 // mwTenant is a middleware that will parse the X-Tenant header and validate the user has access
 // to the requested tenant. If no header is provided, the user's default group is used.
 //

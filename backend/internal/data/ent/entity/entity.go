@@ -29,6 +29,10 @@ const (
 	FieldNotes = "notes"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
+	// FieldLowStockThreshold holds the string denoting the low_stock_threshold field in the database.
+	FieldLowStockThreshold = "low_stock_threshold"
+	// FieldLowStockNotified holds the string denoting the low_stock_notified field in the database.
+	FieldLowStockNotified = "low_stock_notified"
 	// FieldInsured holds the string denoting the insured field in the database.
 	FieldInsured = "insured"
 	// FieldArchived holds the string denoting the archived field in the database.
@@ -141,6 +145,8 @@ var Columns = []string{
 	FieldImportRef,
 	FieldNotes,
 	FieldQuantity,
+	FieldLowStockThreshold,
+	FieldLowStockNotified,
 	FieldInsured,
 	FieldArchived,
 	FieldAssetID,
@@ -206,6 +212,8 @@ var (
 	NotesValidator func(string) error
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
 	DefaultQuantity float64
+	// DefaultLowStockNotified holds the default value on creation for the "low_stock_notified" field.
+	DefaultLowStockNotified bool
 	// DefaultInsured holds the default value on creation for the "insured" field.
 	DefaultInsured bool
 	// DefaultArchived holds the default value on creation for the "archived" field.
@@ -275,6 +283,16 @@ func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 // ByQuantity orders the results by the quantity field.
 func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldQuantity, opts...).ToFunc()
+}
+
+// ByLowStockThreshold orders the results by the low_stock_threshold field.
+func ByLowStockThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLowStockThreshold, opts...).ToFunc()
+}
+
+// ByLowStockNotified orders the results by the low_stock_notified field.
+func ByLowStockNotified(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLowStockNotified, opts...).ToFunc()
 }
 
 // ByInsured orders the results by the insured field.

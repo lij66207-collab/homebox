@@ -234,6 +234,28 @@ func (s *ExportService) Enqueue(ctx context.Context, gid uuid.UUID) (repo.Export
 	return out, nil
 }
 
+// EnqueueBackup creates a pending backup-kind Export row for gid and
+// publishes a job to the export topic. Used by the scheduled auto-backup
+// job; the artifact lifecycle is identical to Enqueue, only the retention
+// differs (see purgeStaleExports).
+func (s *ExportService) EnqueueBackup(ctx context.Context, gid uuid.UUID) (repo.ExportOut, error) {
+	ctx, span := otel.Tracer("services").Start(ctx, "ExportService.EnqueueBackup")
+	defer span.End()
+
+	out, err := s.repos.Exports.CreateBackup(ctx, gid)
+	if err != nil {
+		return out, err
+	}
+
+	if err := s.publishExportJob(ctx, gid, out.ID); err != nil {
+		_ = s.repos.Exports.SetFailed(ctx, gid, out.ID, "failed to enqueue: "+err.Error())
+		return out, err
+	}
+
+	s.publishMutation(gid)
+	return out, nil
+}
+
 // EnqueueImport creates a tracked import row pointing at the zip already
 // staged at uploadKey and publishes a job for the worker to pick up. The
 // returned row carries the ID the frontend can poll for progress.

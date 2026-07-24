@@ -63,6 +63,7 @@ type Config struct {
 	Auth       AuthConfig     `yaml:"auth"`
 	Notifier   NotifierConf   `yaml:"notifier"`
 	AI         AIConf         `yaml:"ai"`
+	Backup     BackupConf     `yaml:"backup"`
 }
 
 type Options struct {

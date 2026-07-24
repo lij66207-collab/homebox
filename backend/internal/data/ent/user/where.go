@@ -91,6 +91,11 @@ func Superuser(v bool) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSuperuser, v))
 }
 
+// Disabled applies equality check predicate on the "disabled" field. It's identical to DisabledEQ.
+func Disabled(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldDisabled, v))
+}
+
 // ActivatedOn applies equality check predicate on the "activated_on" field. It's identical to ActivatedOnEQ.
 func ActivatedOn(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldActivatedOn, v))
@@ -414,6 +419,16 @@ func SuperuserEQ(v bool) predicate.User {
 // SuperuserNEQ applies the NEQ predicate on the "superuser" field.
 func SuperuserNEQ(v bool) predicate.User {
 	return predicate.User(sql.FieldNEQ(FieldSuperuser, v))
+}
+
+// DisabledEQ applies the EQ predicate on the "disabled" field.
+func DisabledEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldDisabled, v))
+}
+
+// DisabledNEQ applies the NEQ predicate on the "disabled" field.
+func DisabledNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldDisabled, v))
 }
 
 // ActivatedOnEQ applies the EQ predicate on the "activated_on" field.

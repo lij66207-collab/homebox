@@ -389,6 +389,18 @@ func (svc *UserService) Login(ctx context.Context, username, password string, ex
 		attribute.Bool("user.has_oidc", usr.OidcIssuer != nil && usr.OidcSubject != nil),
 	)
 
+	// Disabled accounts are rejected the same way as bad credentials so the
+	// response does not reveal the account's admin state.
+	if usr.Disabled {
+		log.Warn().Str("email", username).Msg("Login attempt blocked for disabled account")
+		span.SetAttributes(attribute.String("login.outcome", "blocked_disabled"))
+		_, dummySpan := entityServiceTracer().Start(ctx, "service.UserService.Login.timingDummy",
+			trace.WithAttributes(attribute.String("reason", "disabled")))
+		hasher.CheckDummyPasswordHashCtx(ctx)
+		dummySpan.End()
+		return UserAuthTokenDetail{}, ErrorInvalidLogin
+	}
+
 	// SECURITY: Deny login for users with null or empty password (OIDC users)
 	if usr.PasswordHash == "" {
 		log.Warn().Str("email", username).Msg("Login attempt blocked for user with null password (likely OIDC user)")
@@ -693,6 +705,136 @@ func (svc *UserService) DeleteSelf(ctx context.Context, id uuid.UUID) error {
 	err := svc.repos.Users.Delete(ctx, id)
 	recordServiceSpanError(span, err)
 	return err
+}
+
+var (
+	ErrorAdminDeleteSelf   = errors.New("admin cannot delete their own account via the admin API")
+	ErrorAdminDeleteTarget = errors.New("failed to delete user")
+	ErrorAdminDisableSelf  = errors.New("admin cannot disable their own account via the admin API")
+)
+
+// ListUsers returns all users on the instance. Superuser-only; the route is
+// gated by mwSuperuser.
+func (svc *UserService) ListUsers(ctx context.Context) ([]repo.UserOut, error) {
+	ctx, span := entityServiceTracer().Start(ctx, "service.UserService.ListUsers")
+	defer span.End()
+
+	users, err := svc.repos.Users.GetAll(ctx)
+	recordServiceSpanError(span, err)
+	return users, err
+}
+
+// AdminDeleteUser deletes a user account as an administrator. Groups where the
+// user is the sole member are deleted entirely (entities, attachments,
+// notifiers — same semantics as GroupService.DeleteGroup); for shared groups
+// only the membership is removed. The actor may not delete themselves through
+// this path (use the self-service delete instead).
+func (svc *UserService) AdminDeleteUser(ctx context.Context, actorID, targetID uuid.UUID) error {
+	ctx, span := entityServiceTracer().Start(ctx, "service.UserService.AdminDeleteUser",
+		trace.WithAttributes(
+			attribute.String("actor.id", actorID.String()),
+			attribute.String("target.id", targetID.String()),
+		))
+	defer span.End()
+
+	if actorID == targetID {
+		return ErrorAdminDeleteSelf
+	}
+
+	target, err := svc.repos.Users.GetOneID(ctx, targetID)
+	if err != nil {
+		recordServiceSpanError(span, err)
+		return err
+	}
+
+	for _, gid := range target.GroupIDs {
+		members, err := svc.repos.Users.GetUsersByGroupID(ctx, gid)
+		if err != nil {
+			recordServiceSpanError(span, err)
+			return err
+		}
+
+		if len(members) <= 1 {
+			// Sole member: remove the whole group and its contents
+			if err := svc.repos.Groups.GroupDelete(ctx, gid); err != nil {
+				recordServiceSpanError(span, err)
+				return err
+			}
+		} else {
+			// Shared group: just drop the membership
+			if err := svc.repos.Groups.RemoveMember(ctx, gid, targetID); err != nil {
+				recordServiceSpanError(span, err)
+				return err
+			}
+		}
+	}
+
+	if err := svc.repos.Users.Delete(ctx, targetID); err != nil {
+		recordServiceSpanError(span, err)
+		return ErrorAdminDeleteTarget
+	}
+
+	return nil
+}
+
+// AdminSetPassword sets a user's password directly and revokes all of their
+// sessions, forcing a fresh login with the new credentials.
+func (svc *UserService) AdminSetPassword(ctx context.Context, targetID uuid.UUID, newPassword string) error {
+	ctx, span := entityServiceTracer().Start(ctx, "service.UserService.AdminSetPassword",
+		trace.WithAttributes(attribute.String("target.id", targetID.String())))
+	defer span.End()
+
+	if len(newPassword) < PasswordMinLength {
+		return ErrorPasswordTooShort
+	}
+
+	hash, err := hasher.HashPasswordCtx(ctx, newPassword)
+	if err != nil {
+		recordServiceSpanError(span, err)
+		return err
+	}
+
+	if err := svc.repos.Users.ChangePassword(ctx, targetID, hash); err != nil {
+		recordServiceSpanError(span, err)
+		return err
+	}
+
+	if _, err := svc.LogoutAll(ctx, targetID); err != nil {
+		recordServiceSpanError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+// AdminSetDisabled disables or re-enables a user account. Disabling revokes
+// all active sessions immediately. Admins cannot disable themselves.
+func (svc *UserService) AdminSetDisabled(ctx context.Context, actorID, targetID uuid.UUID, disabled bool) error {
+	ctx, span := entityServiceTracer().Start(ctx, "service.UserService.AdminSetDisabled",
+		trace.WithAttributes(
+			attribute.String("actor.id", actorID.String()),
+			attribute.String("target.id", targetID.String()),
+			attribute.Bool("disabled", disabled),
+		))
+	defer span.End()
+
+	if actorID == targetID && disabled {
+		return ErrorAdminDisableSelf
+	}
+
+	if err := svc.repos.Users.SetDisabled(ctx, targetID, disabled); err != nil {
+		recordServiceSpanError(span, err)
+		return err
+	}
+
+	if disabled {
+		if _, err := svc.LogoutAll(ctx, targetID); err != nil {
+			recordServiceSpanError(span, err)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (svc *UserService) ChangePassword(ctx Context, current string, new string) (ok bool) {

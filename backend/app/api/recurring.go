@@ -53,7 +53,11 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 	}))
 
 	runner.AddPlugin(NewTask("purge-stale-exports", 24*time.Hour, func(ctx context.Context) {
-		purgeStaleExports(ctx, app)
+		purgeStaleExports(ctx, app, 7*24*time.Hour, false)
+	}))
+
+	runner.AddPlugin(NewTask("purge-stale-backups", 24*time.Hour, func(ctx context.Context) {
+		purgeStaleExports(ctx, app, time.Duration(cfg.Backup.RetentionDays)*24*time.Hour, true)
 	}))
 
 	runner.AddPlugin(NewTask("send-notifications", time.Hour, func(ctx context.Context) {
@@ -64,8 +68,33 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 			if err != nil {
 				log.Error().Err(err).Msg("failed to send notifiers")
 			}
+			if err := app.services.BackgroundService.SendWarrantyReminders(context.Background()); err != nil {
+				log.Error().Err(err).Msg("failed to send warranty reminders")
+			}
+			if err := app.services.BackgroundService.SendLowStockReminders(context.Background()); err != nil {
+				log.Error().Err(err).Msg("failed to send low stock reminders")
+			}
 		}
 	}))
+
+	if cfg.Backup.Enabled {
+		runner.AddPlugin(NewTask("scheduled-backup", time.Hour, func(ctx context.Context) {
+			if time.Now().Hour() != cfg.Backup.Hour {
+				return
+			}
+			groups, err := app.repos.Groups.GetAllGroups(ctx, uuid.Nil)
+			if err != nil {
+				log.Error().Err(err).Msg("scheduled backup: failed to list groups")
+				return
+			}
+			for i := range groups {
+				if _, err := app.services.Exports.EnqueueBackup(ctx, groups[i].ID); err != nil {
+					log.Error().Err(err).Str("group_id", groups[i].ID.String()).Msg("scheduled backup: failed to enqueue")
+				}
+			}
+			log.Info().Int("groups", len(groups)).Msg("scheduled backup enqueued")
+		}))
+	}
 
 	runner.AddFunc("collection-export-subscription", func(ctx context.Context) error {
 		return runJobSubscription(ctx, cfg, "collection_export", func(ctx context.Context, msg *pubsub.Message) {
@@ -261,8 +290,13 @@ func runJobSubscription(ctx context.Context, cfg *config.Config, topicName strin
 // pile up. The blob is deleted before the row because the row holds the only
 // ArtifactPath pointer; dropping the row first would orphan the blob if the
 // bucket is unavailable. Failed rows stay so the next sweep retries.
-func purgeStaleExports(ctx context.Context, app *app) {
-	cutoff := time.Now().Add(-7 * 24 * time.Hour)
+// purgeStaleExports deletes export rows and their blob artifacts older than
+// maxAge. When backupsOnly is true only scheduled-backup rows are purged
+// (their retention is configured separately); when false, backup rows are
+// skipped so manual exports/imports follow the short 7-day retention while
+// backups live as long as cfg.Backup.RetentionDays allows.
+func purgeStaleExports(ctx context.Context, app *app, maxAge time.Duration, backupsOnly bool) {
+	cutoff := time.Now().Add(-maxAge)
 	candidates, err := app.repos.Exports.ListOlderThan(ctx, cutoff)
 	if err != nil {
 		log.Err(err).Msg("failed to list stale exports")
@@ -279,6 +313,10 @@ func purgeStaleExports(ctx context.Context, app *app) {
 	defer func() { _ = bucket.Close() }()
 	purged := 0
 	for _, e := range candidates {
+		isBackup := e.Kind == "backup"
+		if isBackup != backupsOnly {
+			continue
+		}
 		if e.ArtifactPath != "" {
 			err := bucket.Delete(ctx, app.repos.Attachments.GetFullPath(e.ArtifactPath))
 			if err != nil && gcerrors.Code(err) != gcerrors.NotFound {

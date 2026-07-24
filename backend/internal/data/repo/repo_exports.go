@@ -58,6 +58,20 @@ func (r *ExportRepository) Create(ctx context.Context, gid uuid.UUID) (ExportOut
 	return mapExport(e), nil
 }
 
+// CreateBackup stages a new pending row for a scheduled automatic backup.
+// Backup rows share the export lifecycle but are excluded from the short
+// 7-day stale-export purge — they follow the configured backup retention.
+func (r *ExportRepository) CreateBackup(ctx context.Context, gid uuid.UUID) (ExportOut, error) {
+	e, err := r.db.Export.Create().
+		SetGroupID(gid).
+		SetKind(export.KindBackup).
+		Save(ctx)
+	if err != nil {
+		return ExportOut{}, err
+	}
+	return mapExport(e), nil
+}
+
 // CreateImport stages a new pending row representing an upload that the
 // worker will restore. The uploadKey points at the blob already written
 // to "{gid}/imports/{uuid}.zip", and sizeBytes is the streamed upload

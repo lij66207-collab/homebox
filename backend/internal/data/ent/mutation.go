@@ -2622,6 +2622,9 @@ type EntityMutation struct {
 	notes                       *string
 	quantity                    *float64
 	addquantity                 *float64
+	low_stock_threshold         *float64
+	addlow_stock_threshold      *float64
+	low_stock_notified          *bool
 	insured                     *bool
 	archived                    *bool
 	asset_id                    *int64
@@ -3082,6 +3085,112 @@ func (m *EntityMutation) AddedQuantity() (r float64, exists bool) {
 func (m *EntityMutation) ResetQuantity() {
 	m.quantity = nil
 	m.addquantity = nil
+}
+
+// SetLowStockThreshold sets the "low_stock_threshold" field.
+func (m *EntityMutation) SetLowStockThreshold(f float64) {
+	m.low_stock_threshold = &f
+	m.addlow_stock_threshold = nil
+}
+
+// LowStockThreshold returns the value of the "low_stock_threshold" field in the mutation.
+func (m *EntityMutation) LowStockThreshold() (r float64, exists bool) {
+	v := m.low_stock_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLowStockThreshold returns the old "low_stock_threshold" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldLowStockThreshold(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLowStockThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLowStockThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLowStockThreshold: %w", err)
+	}
+	return oldValue.LowStockThreshold, nil
+}
+
+// AddLowStockThreshold adds f to the "low_stock_threshold" field.
+func (m *EntityMutation) AddLowStockThreshold(f float64) {
+	if m.addlow_stock_threshold != nil {
+		*m.addlow_stock_threshold += f
+	} else {
+		m.addlow_stock_threshold = &f
+	}
+}
+
+// AddedLowStockThreshold returns the value that was added to the "low_stock_threshold" field in this mutation.
+func (m *EntityMutation) AddedLowStockThreshold() (r float64, exists bool) {
+	v := m.addlow_stock_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearLowStockThreshold clears the value of the "low_stock_threshold" field.
+func (m *EntityMutation) ClearLowStockThreshold() {
+	m.low_stock_threshold = nil
+	m.addlow_stock_threshold = nil
+	m.clearedFields[entity.FieldLowStockThreshold] = struct{}{}
+}
+
+// LowStockThresholdCleared returns if the "low_stock_threshold" field was cleared in this mutation.
+func (m *EntityMutation) LowStockThresholdCleared() bool {
+	_, ok := m.clearedFields[entity.FieldLowStockThreshold]
+	return ok
+}
+
+// ResetLowStockThreshold resets all changes to the "low_stock_threshold" field.
+func (m *EntityMutation) ResetLowStockThreshold() {
+	m.low_stock_threshold = nil
+	m.addlow_stock_threshold = nil
+	delete(m.clearedFields, entity.FieldLowStockThreshold)
+}
+
+// SetLowStockNotified sets the "low_stock_notified" field.
+func (m *EntityMutation) SetLowStockNotified(b bool) {
+	m.low_stock_notified = &b
+}
+
+// LowStockNotified returns the value of the "low_stock_notified" field in the mutation.
+func (m *EntityMutation) LowStockNotified() (r bool, exists bool) {
+	v := m.low_stock_notified
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLowStockNotified returns the old "low_stock_notified" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldLowStockNotified(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLowStockNotified is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLowStockNotified requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLowStockNotified: %w", err)
+	}
+	return oldValue.LowStockNotified, nil
+}
+
+// ResetLowStockNotified resets all changes to the "low_stock_notified" field.
+func (m *EntityMutation) ResetLowStockNotified() {
+	m.low_stock_notified = nil
 }
 
 // SetInsured sets the "insured" field.
@@ -4307,7 +4416,7 @@ func (m *EntityMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EntityMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, entity.FieldCreatedAt)
 	}
@@ -4328,6 +4437,12 @@ func (m *EntityMutation) Fields() []string {
 	}
 	if m.quantity != nil {
 		fields = append(fields, entity.FieldQuantity)
+	}
+	if m.low_stock_threshold != nil {
+		fields = append(fields, entity.FieldLowStockThreshold)
+	}
+	if m.low_stock_notified != nil {
+		fields = append(fields, entity.FieldLowStockNotified)
 	}
 	if m.insured != nil {
 		fields = append(fields, entity.FieldInsured)
@@ -4402,6 +4517,10 @@ func (m *EntityMutation) Field(name string) (ent.Value, bool) {
 		return m.Notes()
 	case entity.FieldQuantity:
 		return m.Quantity()
+	case entity.FieldLowStockThreshold:
+		return m.LowStockThreshold()
+	case entity.FieldLowStockNotified:
+		return m.LowStockNotified()
 	case entity.FieldInsured:
 		return m.Insured()
 	case entity.FieldArchived:
@@ -4459,6 +4578,10 @@ func (m *EntityMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldNotes(ctx)
 	case entity.FieldQuantity:
 		return m.OldQuantity(ctx)
+	case entity.FieldLowStockThreshold:
+		return m.OldLowStockThreshold(ctx)
+	case entity.FieldLowStockNotified:
+		return m.OldLowStockNotified(ctx)
 	case entity.FieldInsured:
 		return m.OldInsured(ctx)
 	case entity.FieldArchived:
@@ -4550,6 +4673,20 @@ func (m *EntityMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantity(v)
+		return nil
+	case entity.FieldLowStockThreshold:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLowStockThreshold(v)
+		return nil
+	case entity.FieldLowStockNotified:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLowStockNotified(v)
 		return nil
 	case entity.FieldInsured:
 		v, ok := value.(bool)
@@ -4681,6 +4818,9 @@ func (m *EntityMutation) AddedFields() []string {
 	if m.addquantity != nil {
 		fields = append(fields, entity.FieldQuantity)
 	}
+	if m.addlow_stock_threshold != nil {
+		fields = append(fields, entity.FieldLowStockThreshold)
+	}
 	if m.addasset_id != nil {
 		fields = append(fields, entity.FieldAssetID)
 	}
@@ -4700,6 +4840,8 @@ func (m *EntityMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case entity.FieldQuantity:
 		return m.AddedQuantity()
+	case entity.FieldLowStockThreshold:
+		return m.AddedLowStockThreshold()
 	case entity.FieldAssetID:
 		return m.AddedAssetID()
 	case entity.FieldPurchasePrice:
@@ -4721,6 +4863,13 @@ func (m *EntityMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantity(v)
+		return nil
+	case entity.FieldLowStockThreshold:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLowStockThreshold(v)
 		return nil
 	case entity.FieldAssetID:
 		v, ok := value.(int64)
@@ -4759,6 +4908,9 @@ func (m *EntityMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(entity.FieldNotes) {
 		fields = append(fields, entity.FieldNotes)
+	}
+	if m.FieldCleared(entity.FieldLowStockThreshold) {
+		fields = append(fields, entity.FieldLowStockThreshold)
 	}
 	if m.FieldCleared(entity.FieldSerialNumber) {
 		fields = append(fields, entity.FieldSerialNumber)
@@ -4812,6 +4964,9 @@ func (m *EntityMutation) ClearField(name string) error {
 		return nil
 	case entity.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case entity.FieldLowStockThreshold:
+		m.ClearLowStockThreshold()
 		return nil
 	case entity.FieldSerialNumber:
 		m.ClearSerialNumber()
@@ -4871,6 +5026,12 @@ func (m *EntityMutation) ResetField(name string) error {
 		return nil
 	case entity.FieldQuantity:
 		m.ResetQuantity()
+		return nil
+	case entity.FieldLowStockThreshold:
+		m.ResetLowStockThreshold()
+		return nil
+	case entity.FieldLowStockNotified:
+		m.ResetLowStockNotified()
 		return nil
 	case entity.FieldInsured:
 		m.ResetInsured()
@@ -15504,6 +15665,7 @@ type UserMutation struct {
 	password                     *string
 	is_superuser                 *bool
 	superuser                    *bool
+	disabled                     *bool
 	activated_on                 *time.Time
 	oidc_issuer                  *string
 	oidc_subject                 *string
@@ -15897,6 +16059,42 @@ func (m *UserMutation) OldSuperuser(ctx context.Context) (v bool, err error) {
 // ResetSuperuser resets all changes to the "superuser" field.
 func (m *UserMutation) ResetSuperuser() {
 	m.superuser = nil
+}
+
+// SetDisabled sets the "disabled" field.
+func (m *UserMutation) SetDisabled(b bool) {
+	m.disabled = &b
+}
+
+// Disabled returns the value of the "disabled" field in the mutation.
+func (m *UserMutation) Disabled() (r bool, exists bool) {
+	v := m.disabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisabled returns the old "disabled" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldDisabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisabled: %w", err)
+	}
+	return oldValue.Disabled, nil
+}
+
+// ResetDisabled resets all changes to the "disabled" field.
+func (m *UserMutation) ResetDisabled() {
+	m.disabled = nil
 }
 
 // SetActivatedOn sets the "activated_on" field.
@@ -16448,7 +16646,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -16469,6 +16667,9 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.superuser != nil {
 		fields = append(fields, user.FieldSuperuser)
+	}
+	if m.disabled != nil {
+		fields = append(fields, user.FieldDisabled)
 	}
 	if m.activated_on != nil {
 		fields = append(fields, user.FieldActivatedOn)
@@ -16507,6 +16708,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.IsSuperuser()
 	case user.FieldSuperuser:
 		return m.Superuser()
+	case user.FieldDisabled:
+		return m.Disabled()
 	case user.FieldActivatedOn:
 		return m.ActivatedOn()
 	case user.FieldOidcIssuer:
@@ -16540,6 +16743,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIsSuperuser(ctx)
 	case user.FieldSuperuser:
 		return m.OldSuperuser(ctx)
+	case user.FieldDisabled:
+		return m.OldDisabled(ctx)
 	case user.FieldActivatedOn:
 		return m.OldActivatedOn(ctx)
 	case user.FieldOidcIssuer:
@@ -16607,6 +16812,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSuperuser(v)
+		return nil
+	case user.FieldDisabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisabled(v)
 		return nil
 	case user.FieldActivatedOn:
 		v, ok := value.(time.Time)
@@ -16751,6 +16963,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldSuperuser:
 		m.ResetSuperuser()
+		return nil
+	case user.FieldDisabled:
+		m.ResetDisabled()
 		return nil
 	case user.FieldActivatedOn:
 		m.ResetActivatedOn()

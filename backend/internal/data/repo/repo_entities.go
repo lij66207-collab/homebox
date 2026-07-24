@@ -136,6 +136,8 @@ type (
 		Insured                  bool              `json:"insured"`
 		Archived                 bool              `json:"archived"`
 		SyncChildEntityLocations bool              `json:"syncChildEntityLocations"`
+		// Low stock — nil clears the threshold
+		LowStockThreshold *float64 `json:"lowStockThreshold" extensions:"x-nullable,x-omitempty"`
 		// Warranty
 		LifetimeWarranty bool `json:"lifetimeWarranty"`
 	}
@@ -162,6 +164,10 @@ type (
 		UpdatedAt   time.Time `json:"updatedAt"`
 
 		PurchasePrice float64 `json:"purchasePrice"`
+
+		// Low stock
+		LowStockThreshold *float64 `json:"lowStockThreshold,omitempty" extensions:"x-nullable,x-omitempty"`
+		LowStockNotified  bool     `json:"lowStockNotified"`
 
 		// Edges
 		Parent     *EntitySummary     `json:"parent,omitempty"     extensions:"x-nullable,x-omitempty"`
@@ -268,6 +274,10 @@ func mapEntitySummary(e *ent.Entity) EntitySummary {
 		UpdatedAt:     e.UpdatedAt,
 		Archived:      e.Archived,
 		PurchasePrice: e.PurchasePrice,
+
+		// Low stock
+		LowStockThreshold: e.LowStockThreshold,
+		LowStockNotified:  e.LowStockNotified,
 
 		// Edges
 		Parent:     parent,
@@ -938,6 +948,84 @@ func (r *EntityRepository) GetAll(ctx context.Context, gid uuid.UUID) ([]EntityO
 	return out, nil
 }
 
+// GetWarrantyExpiringBetween returns non-archived items whose warranty
+// expires within [from, to), excluding lifetime warranties and rows without
+// an expiry date. Used by the warranty reminder job.
+func (r *EntityRepository) GetWarrantyExpiringBetween(ctx context.Context, gid uuid.UUID, from, to time.Time) ([]EntityOut, error) {
+	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.GetWarrantyExpiringBetween",
+		trace.WithAttributes(attribute.String("group.id", gid.String())))
+	defer span.End()
+
+	out, err := mapEntitiesOutErr(r.db.Entity.Query().
+		Where(
+			entity.HasGroupWith(group.ID(gid)),
+			entity.Archived(false),
+			entity.LifetimeWarranty(false),
+			entity.WarrantyExpiresNotNil(),
+			entity.WarrantyExpiresGTE(from),
+			entity.WarrantyExpiresLT(to),
+		).
+		All(ctx))
+	if err != nil {
+		recordSpanError(span, err)
+		return out, err
+	}
+	return out, nil
+}
+
+// GetLowStock returns non-archived items that have a low-stock threshold
+// configured, whose quantity has dropped to or below it, and which have not
+// been notified yet (the notified latch resets when quantity rises again).
+func (r *EntityRepository) GetLowStock(ctx context.Context, gid uuid.UUID) ([]EntityOut, error) {
+	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.GetLowStock",
+		trace.WithAttributes(attribute.String("group.id", gid.String())))
+	defer span.End()
+
+	out, err := mapEntitiesOutErr(r.db.Entity.Query().
+		Where(
+			entity.HasGroupWith(group.ID(gid)),
+			entity.Archived(false),
+			entity.LowStockThresholdNotNil(),
+			entity.LowStockNotified(false),
+		).
+		All(ctx))
+	if err != nil {
+		recordSpanError(span, err)
+		return out, err
+	}
+
+	return lo.Filter(out, func(e EntityOut, _ int) bool {
+		return e.LowStockThreshold != nil && e.Quantity <= *e.LowStockThreshold
+	}), nil
+}
+
+// MarkLowStockNotified sets the notified latch on the given entities so the
+// reminder job does not report them again until restocked.
+func (r *EntityRepository) MarkLowStockNotified(ctx context.Context, gid uuid.UUID, ids []uuid.UUID) error {
+	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.MarkLowStockNotified",
+		trace.WithAttributes(
+			attribute.String("group.id", gid.String()),
+			attribute.Int("entities.count", len(ids)),
+		))
+	defer span.End()
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	err := r.db.Entity.Update().
+		Where(
+			entity.HasGroupWith(group.ID(gid)),
+			entity.IDIn(ids...),
+		).
+		SetLowStockNotified(true).
+		Exec(ctx)
+	if err != nil {
+		recordSpanError(span, err)
+	}
+	return err
+}
+
 func (r *EntityRepository) GetAllZeroAssetID(ctx context.Context, gid uuid.UUID) ([]EntitySummary, error) {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.GetAllZeroAssetID",
 		trace.WithAttributes(attribute.String("group.id", gid.String())))
@@ -1579,6 +1667,18 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 		q.SetEntityTypeID(data.EntityTypeID)
 	}
 
+	// Low stock threshold. nil clears the column. Whenever quantity or the
+	// threshold changes, re-evaluate the notification latch: notified stays
+	// latched only while quantity is still at/below the threshold.
+	if data.LowStockThreshold != nil {
+		q.SetLowStockThreshold(*data.LowStockThreshold)
+	} else {
+		q.ClearLowStockThreshold()
+	}
+	if data.LowStockThreshold == nil || data.Quantity > *data.LowStockThreshold {
+		q.SetLowStockNotified(false)
+	}
+
 	tagsCtx, tagsSpan := entityTracer().Start(ctx, "repo.EntityRepository.UpdateByGroup.tags")
 	currentTags, err := r.db.Entity.Query().Where(entity.ID(data.ID)).QueryTag().All(tagsCtx)
 	if err != nil {
@@ -1861,6 +1961,13 @@ func (r *EntityRepository) Patch(ctx context.Context, gid, id uuid.UUID, data En
 		}
 
 		q.SetQuantity(*data.Quantity)
+
+		// Re-latch the low stock notification flag when the quantity rises
+		// above the threshold again (or no threshold is set).
+		current, qerr := tx.Entity.Query().Where(entity.ID(id)).Select(entity.FieldLowStockThreshold).Only(ctx)
+		if qerr == nil && (current.LowStockThreshold == nil || *data.Quantity > *current.LowStockThreshold) {
+			q.SetLowStockNotified(false)
+		}
 	}
 
 	if data.ParentID != uuid.Nil {

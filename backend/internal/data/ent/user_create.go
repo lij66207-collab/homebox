@@ -108,6 +108,20 @@ func (_c *UserCreate) SetNillableSuperuser(v *bool) *UserCreate {
 	return _c
 }
 
+// SetDisabled sets the "disabled" field.
+func (_c *UserCreate) SetDisabled(v bool) *UserCreate {
+	_c.mutation.SetDisabled(v)
+	return _c
+}
+
+// SetNillableDisabled sets the "disabled" field if the given value is not nil.
+func (_c *UserCreate) SetNillableDisabled(v *bool) *UserCreate {
+	if v != nil {
+		_c.SetDisabled(*v)
+	}
+	return _c
+}
+
 // SetActivatedOn sets the "activated_on" field.
 func (_c *UserCreate) SetActivatedOn(v time.Time) *UserCreate {
 	_c.mutation.SetActivatedOn(v)
@@ -310,6 +324,10 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultSuperuser
 		_c.mutation.SetSuperuser(v)
 	}
+	if _, ok := _c.mutation.Disabled(); !ok {
+		v := user.DefaultDisabled
+		_c.mutation.SetDisabled(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := user.DefaultID()
 		_c.mutation.SetID(v)
@@ -350,6 +368,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.Superuser(); !ok {
 		return &ValidationError{Name: "superuser", err: errors.New(`ent: missing required field "User.superuser"`)}
+	}
+	if _, ok := _c.mutation.Disabled(); !ok {
+		return &ValidationError{Name: "disabled", err: errors.New(`ent: missing required field "User.disabled"`)}
 	}
 	return nil
 }
@@ -413,6 +434,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Superuser(); ok {
 		_spec.SetField(user.FieldSuperuser, field.TypeBool, value)
 		_node.Superuser = value
+	}
+	if value, ok := _c.mutation.Disabled(); ok {
+		_spec.SetField(user.FieldDisabled, field.TypeBool, value)
+		_node.Disabled = value
 	}
 	if value, ok := _c.mutation.ActivatedOn(); ok {
 		_spec.SetField(user.FieldActivatedOn, field.TypeTime, value)

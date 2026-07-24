@@ -98,6 +98,7 @@ const DefaultKind = KindExport
 const (
 	KindExport Kind = "export"
 	KindImport Kind = "import"
+	KindBackup Kind = "backup"
 )
 
 func (k Kind) String() string {
@@ -107,7 +108,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindExport, KindImport:
+	case KindExport, KindImport, KindBackup:
 		return nil
 	default:
 		return fmt.Errorf("export: invalid enum value for kind field: %q", k)

@@ -41,6 +41,10 @@ func (User) Fields() []ent.Field {
 			Default(false),
 		field.Bool("superuser").
 			Default(false),
+		// disabled accounts are rejected at login and have their sessions
+		// revoked by the admin API. Distinct from deletion: data is kept.
+		field.Bool("disabled").
+			Default(false),
 		field.Time("activated_on").
 			Optional(),
 		// OIDC identity mapping fields (issuer + subject)

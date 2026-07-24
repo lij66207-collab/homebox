@@ -33,7 +33,7 @@ func (Export) Fields() []ent.Field {
 		// terminal action differs ("download" vs "restore"). Keeping them
 		// in one table avoids duplicating the entire job-tracking schema.
 		field.Enum("kind").
-			Values("export", "import").
+			Values("export", "import", "backup").
 			Default("export"),
 		field.Enum("status").
 			Values("pending", "running", "completed", "failed").

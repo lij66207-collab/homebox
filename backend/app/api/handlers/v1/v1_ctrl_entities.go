@@ -487,7 +487,7 @@ func (ctrl *V1Controller) HandleEntitiesImport() errchain.HandlerFunc {
 			return multipartFormError(err)
 		}
 
-		file, _, err := r.FormFile("csv")
+		file, header, err := r.FormFile("csv")
 		if err != nil {
 			recordCtrlSpanError(parseSpan, err)
 			parseSpan.End()
@@ -501,7 +501,16 @@ func (ctrl *V1Controller) HandleEntitiesImport() errchain.HandlerFunc {
 		auth := services.NewContext(spanCtx)
 		span.SetAttributes(attribute.String("group.id", auth.GID.String()))
 
-		count, err := ctrl.svc.Entities.CsvImport(spanCtx, auth.GID, file)
+		// Excel files go through the xlsx reader; everything else is treated as CSV/TSV
+		isExcel := strings.HasSuffix(strings.ToLower(header.Filename), ".xlsx")
+		span.SetAttributes(attribute.Bool("import.excel", isExcel))
+
+		var count int
+		if isExcel {
+			count, err = ctrl.svc.Entities.XlsxImport(spanCtx, auth.GID, file)
+		} else {
+			count, err = ctrl.svc.Entities.CsvImport(spanCtx, auth.GID, file)
+		}
 		if err != nil {
 			recordCtrlSpanError(span, err)
 			log.Err(err).Msg("failed to import entities")

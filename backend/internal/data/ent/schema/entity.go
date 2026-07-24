@@ -44,6 +44,15 @@ func (Entity) Fields() []ent.Field {
 			Optional(),
 		field.Float("quantity").
 			Default(1),
+		// low_stock_threshold, when set, triggers a notification once the
+		// item's quantity drops to or below it. low_stock_notified is the
+		// latch that prevents repeat notifications until the quantity rises
+		// above the threshold again.
+		field.Float("low_stock_threshold").
+			Optional().
+			Nillable(),
+		field.Bool("low_stock_notified").
+			Default(false),
 		field.Bool("insured").
 			Default(false),
 		field.Bool("archived").

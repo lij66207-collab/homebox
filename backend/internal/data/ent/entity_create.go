@@ -117,6 +117,34 @@ func (_c *EntityCreate) SetNillableQuantity(v *float64) *EntityCreate {
 	return _c
 }
 
+// SetLowStockThreshold sets the "low_stock_threshold" field.
+func (_c *EntityCreate) SetLowStockThreshold(v float64) *EntityCreate {
+	_c.mutation.SetLowStockThreshold(v)
+	return _c
+}
+
+// SetNillableLowStockThreshold sets the "low_stock_threshold" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableLowStockThreshold(v *float64) *EntityCreate {
+	if v != nil {
+		_c.SetLowStockThreshold(*v)
+	}
+	return _c
+}
+
+// SetLowStockNotified sets the "low_stock_notified" field.
+func (_c *EntityCreate) SetLowStockNotified(v bool) *EntityCreate {
+	_c.mutation.SetLowStockNotified(v)
+	return _c
+}
+
+// SetNillableLowStockNotified sets the "low_stock_notified" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableLowStockNotified(v *bool) *EntityCreate {
+	if v != nil {
+		_c.SetLowStockNotified(*v)
+	}
+	return _c
+}
+
 // SetInsured sets the "insured" field.
 func (_c *EntityCreate) SetInsured(v bool) *EntityCreate {
 	_c.mutation.SetInsured(v)
@@ -532,6 +560,10 @@ func (_c *EntityCreate) defaults() {
 		v := entity.DefaultQuantity
 		_c.mutation.SetQuantity(v)
 	}
+	if _, ok := _c.mutation.LowStockNotified(); !ok {
+		v := entity.DefaultLowStockNotified
+		_c.mutation.SetLowStockNotified(v)
+	}
 	if _, ok := _c.mutation.Insured(); !ok {
 		v := entity.DefaultInsured
 		_c.mutation.SetInsured(v)
@@ -599,6 +631,9 @@ func (_c *EntityCreate) check() error {
 	}
 	if _, ok := _c.mutation.Quantity(); !ok {
 		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "Entity.quantity"`)}
+	}
+	if _, ok := _c.mutation.LowStockNotified(); !ok {
+		return &ValidationError{Name: "low_stock_notified", err: errors.New(`ent: missing required field "Entity.low_stock_notified"`)}
 	}
 	if _, ok := _c.mutation.Insured(); !ok {
 		return &ValidationError{Name: "insured", err: errors.New(`ent: missing required field "Entity.insured"`)}
@@ -714,6 +749,14 @@ func (_c *EntityCreate) createSpec() (*Entity, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Quantity(); ok {
 		_spec.SetField(entity.FieldQuantity, field.TypeFloat64, value)
 		_node.Quantity = value
+	}
+	if value, ok := _c.mutation.LowStockThreshold(); ok {
+		_spec.SetField(entity.FieldLowStockThreshold, field.TypeFloat64, value)
+		_node.LowStockThreshold = &value
+	}
+	if value, ok := _c.mutation.LowStockNotified(); ok {
+		_spec.SetField(entity.FieldLowStockNotified, field.TypeBool, value)
+		_node.LowStockNotified = value
 	}
 	if value, ok := _c.mutation.Insured(); ok {
 		_spec.SetField(entity.FieldInsured, field.TypeBool, value)

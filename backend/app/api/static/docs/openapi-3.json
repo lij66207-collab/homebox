@@ -176,6 +176,347 @@
                 }
             }
         },
+        "/v1/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List all users (superuser only)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/repo.UserOut"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a superuser",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Create a user (superuser only)",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/v1.AdminUserCreateRequest"
+                            }
+                        }
+                    },
+                    "description": "User Data",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/v1.Wrapped"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "item": {
+                                                    "$ref": "#/components/schemas/repo.UserOut"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a superuser",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Email already in use",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/users/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Delete a user (superuser only)",
+                "parameters": [
+                    {
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Cannot delete own account via admin API",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a superuser",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/users/{id}/disabled": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Disable or re-enable a user account (superuser only)",
+                "parameters": [
+                    {
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/v1.AdminSetDisabledRequest"
+                            }
+                        }
+                    },
+                    "description": "Disabled flag",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Cannot disable own account",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a superuser",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/users/{id}/password": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Set a user's password directly (superuser only)",
+                "parameters": [
+                    {
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/v1.AdminSetPasswordRequest"
+                            }
+                        }
+                    },
+                    "description": "New password",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Password too short",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a superuser",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/admin/users/{id}/reset-link": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Generate a one-time password reset link for a user (superuser only)",
+                "parameters": [
+                    {
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/v1.Wrapped"
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "item": {
+                                                    "$ref": "#/components/schemas/v1.AdminResetLinkResponse"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a superuser",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/assets/{id}": {
             "get": {
                 "security": [
@@ -3964,6 +4305,14 @@
                         "description": "LifetimeWarranty holds the value of the \"lifetime_warranty\" field.",
                         "type": "boolean"
                     },
+                    "low_stock_notified": {
+                        "description": "LowStockNotified holds the value of the \"low_stock_notified\" field.",
+                        "type": "boolean"
+                    },
+                    "low_stock_threshold": {
+                        "description": "LowStockThreshold holds the value of the \"low_stock_threshold\" field.",
+                        "type": "number"
+                    },
                     "manufacturer": {
                         "description": "Manufacturer holds the value of the \"manufacturer\" field.",
                         "type": "string"
@@ -4923,6 +5272,10 @@
                         "description": "DefaultGroupID holds the value of the \"default_group_id\" field.",
                         "type": "string"
                     },
+                    "disabled": {
+                        "description": "Disabled holds the value of the \"disabled\" field.",
+                        "type": "boolean"
+                    },
                     "edges": {
                         "description": "Edges holds the relations/edges for other nodes in the graph.\nThe values are being populated by the UserQuery when eager-loading is set.",
                         "allOf": [
@@ -5087,12 +5440,14 @@
                 "enum": [
                     "export",
                     "export",
-                    "import"
+                    "import",
+                    "backup"
                 ],
                 "x-enum-varnames": [
                     "DefaultKind",
                     "KindExport",
-                    "KindImport"
+                    "KindImport",
+                    "KindBackup"
                 ]
             },
             "export.Status": {
@@ -5396,6 +5751,15 @@
                         "x-omitempty": true,
                         "nullable": true
                     },
+                    "lowStockNotified": {
+                        "type": "boolean"
+                    },
+                    "lowStockThreshold": {
+                        "description": "Low stock",
+                        "type": "number",
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
                     "manufacturer": {
                         "type": "string"
                     },
@@ -5571,6 +5935,15 @@
                     "itemCount": {
                         "description": "Container-specific (populated when querying locations)",
                         "type": "number"
+                    },
+                    "lowStockNotified": {
+                        "type": "boolean"
+                    },
+                    "lowStockThreshold": {
+                        "description": "Low stock",
+                        "type": "number",
+                        "x-omitempty": true,
+                        "nullable": true
                     },
                     "name": {
                         "type": "string"
@@ -5988,6 +6361,12 @@
                     "lifetimeWarranty": {
                         "description": "Warranty",
                         "type": "boolean"
+                    },
+                    "lowStockThreshold": {
+                        "description": "Low stock — nil clears the threshold",
+                        "type": "number",
+                        "x-omitempty": true,
+                        "nullable": true
                     },
                     "manufacturer": {
                         "type": "string"
@@ -6638,6 +7017,9 @@
                     "defaultGroupId": {
                         "type": "string"
                     },
+                    "disabled": {
+                        "type": "boolean"
+                    },
                     "email": {
                         "type": "string"
                     },
@@ -6896,6 +7278,52 @@
                 "properties": {
                     "completed": {
                         "type": "integer"
+                    }
+                }
+            },
+            "v1.AdminResetLinkResponse": {
+                "type": "object",
+                "properties": {
+                    "link": {
+                        "type": "string"
+                    }
+                }
+            },
+            "v1.AdminSetDisabledRequest": {
+                "type": "object",
+                "properties": {
+                    "disabled": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "v1.AdminSetPasswordRequest": {
+                "type": "object",
+                "required": [
+                    "password"
+                ],
+                "properties": {
+                    "password": {
+                        "type": "string"
+                    }
+                }
+            },
+            "v1.AdminUserCreateRequest": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "name",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
                     }
                 }
             },

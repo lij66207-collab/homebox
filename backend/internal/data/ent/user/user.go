@@ -29,6 +29,8 @@ const (
 	FieldIsSuperuser = "is_superuser"
 	// FieldSuperuser holds the string denoting the superuser field in the database.
 	FieldSuperuser = "superuser"
+	// FieldDisabled holds the string denoting the disabled field in the database.
+	FieldDisabled = "disabled"
 	// FieldActivatedOn holds the string denoting the activated_on field in the database.
 	FieldActivatedOn = "activated_on"
 	// FieldOidcIssuer holds the string denoting the oidc_issuer field in the database.
@@ -105,6 +107,7 @@ var Columns = []string{
 	FieldPassword,
 	FieldIsSuperuser,
 	FieldSuperuser,
+	FieldDisabled,
 	FieldActivatedOn,
 	FieldOidcIssuer,
 	FieldOidcSubject,
@@ -145,6 +148,8 @@ var (
 	DefaultIsSuperuser bool
 	// DefaultSuperuser holds the default value on creation for the "superuser" field.
 	DefaultSuperuser bool
+	// DefaultDisabled holds the default value on creation for the "disabled" field.
+	DefaultDisabled bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -190,6 +195,11 @@ func ByIsSuperuser(opts ...sql.OrderTermOption) OrderOption {
 // BySuperuser orders the results by the superuser field.
 func BySuperuser(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSuperuser, opts...).ToFunc()
+}
+
+// ByDisabled orders the results by the disabled field.
+func ByDisabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisabled, opts...).ToFunc()
 }
 
 // ByActivatedOn orders the results by the activated_on field.

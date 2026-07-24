@@ -113,6 +113,24 @@ func (s *IOSheet) Read(data io.Reader) error {
 		return err
 	}
 
+	return s.readRows(sheet)
+}
+
+// ReadXLSX reads the first worksheet of an Excel (.xlsx) file and populates the
+// "Rows" field, accepting exactly the same column format as Read. This lets
+// users maintain the standard CSV template in Excel.
+func (s *IOSheet) ReadXLSX(data io.Reader) error {
+	sheet, err := readRawXlsx(data)
+	if err != nil {
+		return err
+	}
+
+	return s.readRows(sheet)
+}
+
+// readRows maps raw sheet rows (header row + data rows) onto ExportCSVRow
+// values using the csv struct tags. See Read for the format rules.
+func (s *IOSheet) readRows(sheet [][]string) error {
 	if len(sheet) < 2 {
 		return fmt.Errorf("sheet must have at least 1 row of data (header + 1)")
 	}

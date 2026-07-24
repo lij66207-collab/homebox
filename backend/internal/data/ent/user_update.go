@@ -116,6 +116,20 @@ func (_u *UserUpdate) SetNillableSuperuser(v *bool) *UserUpdate {
 	return _u
 }
 
+// SetDisabled sets the "disabled" field.
+func (_u *UserUpdate) SetDisabled(v bool) *UserUpdate {
+	_u.mutation.SetDisabled(v)
+	return _u
+}
+
+// SetNillableDisabled sets the "disabled" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableDisabled(v *bool) *UserUpdate {
+	if v != nil {
+		_u.SetDisabled(*v)
+	}
+	return _u
+}
+
 // SetActivatedOn sets the "activated_on" field.
 func (_u *UserUpdate) SetActivatedOn(v time.Time) *UserUpdate {
 	_u.mutation.SetActivatedOn(v)
@@ -482,6 +496,9 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Superuser(); ok {
 		_spec.SetField(user.FieldSuperuser, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.Disabled(); ok {
+		_spec.SetField(user.FieldDisabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.ActivatedOn(); ok {
 		_spec.SetField(user.FieldActivatedOn, field.TypeTime, value)
 	}
@@ -847,6 +864,20 @@ func (_u *UserUpdateOne) SetSuperuser(v bool) *UserUpdateOne {
 func (_u *UserUpdateOne) SetNillableSuperuser(v *bool) *UserUpdateOne {
 	if v != nil {
 		_u.SetSuperuser(*v)
+	}
+	return _u
+}
+
+// SetDisabled sets the "disabled" field.
+func (_u *UserUpdateOne) SetDisabled(v bool) *UserUpdateOne {
+	_u.mutation.SetDisabled(v)
+	return _u
+}
+
+// SetNillableDisabled sets the "disabled" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableDisabled(v *bool) *UserUpdateOne {
+	if v != nil {
+		_u.SetDisabled(*v)
 	}
 	return _u
 }
@@ -1246,6 +1277,9 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.Superuser(); ok {
 		_spec.SetField(user.FieldSuperuser, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Disabled(); ok {
+		_spec.SetField(user.FieldDisabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ActivatedOn(); ok {
 		_spec.SetField(user.FieldActivatedOn, field.TypeTime, value)

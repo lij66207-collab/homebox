@@ -54,6 +54,7 @@ type (
 		Name           string      `json:"name"`
 		Email          string      `json:"email"`
 		IsSuperuser    bool        `json:"isSuperuser"`
+		Disabled       bool        `json:"disabled"`
 		DefaultGroupID uuid.UUID   `json:"defaultGroupId"`
 		GroupIDs       []uuid.UUID `json:"groupIds"`
 		PasswordHash   string      `json:"-"`
@@ -80,6 +81,7 @@ func mapUserOut(user *ent.User) UserOut {
 		Name:           user.Name,
 		Email:          user.Email,
 		IsSuperuser:    user.IsSuperuser,
+		Disabled:       user.Disabled,
 		DefaultGroupID: lo.FromPtrOr(user.DefaultGroupID, uuid.Nil),
 		GroupIDs: lo.Map(user.Edges.Groups, func(g *ent.Group, _ int) uuid.UUID {
 			return g.ID
@@ -368,6 +370,20 @@ func (r *UserRepository) ChangePassword(ctx context.Context, uid uuid.UUID, pw s
 	defer span.End()
 
 	err := r.db.User.UpdateOneID(uid).SetPassword(pw).Exec(ctx)
+	recordSpanError(span, err)
+	return err
+}
+
+// SetDisabled flags a user account as disabled (login rejected) or re-enables it.
+func (r *UserRepository) SetDisabled(ctx context.Context, uid uuid.UUID, disabled bool) error {
+	ctx, span := entityTracer().Start(ctx, "repo.UserRepository.SetDisabled",
+		trace.WithAttributes(
+			attribute.String("user.id", uid.String()),
+			attribute.Bool("user.disabled", disabled),
+		))
+	defer span.End()
+
+	err := r.db.User.UpdateOneID(uid).SetDisabled(disabled).Exec(ctx)
 	recordSpanError(span, err)
 	return err
 }

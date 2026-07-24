@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 
 	"github.com/samber/lo"
+	"github.com/xuri/excelize/v2"
 )
 
 // Required column headers in CSV/TSV imports. Exported so tests and other
@@ -76,6 +78,58 @@ func readRawCsv(r io.Reader) ([][]string, error) {
 	reader.Comma = sep
 
 	return reader.ReadAll()
+}
+
+// readRawXlsx reads the first worksheet of an Excel (.xlsx) file and returns
+// its rows in the same shape as readRawCsv (header row first). Rows shorter
+// than the header row are padded with empty strings so the rectangular check
+// downstream behaves the same as for CSV (excelize trims trailing empty
+// cells, which CSV files express as trailing separators).
+func readRawXlsx(r io.Reader) ([][]string, error) {
+	f, err := excelize.OpenReader(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open xlsx file: %w", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		return nil, errors.New("xlsx file contains no worksheets")
+	}
+
+	rows, err := f.GetRows(sheets[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to read xlsx worksheet: %w", err)
+	}
+
+	// Drop fully empty rows (e.g. trailing blank lines Excel likes to keep)
+	out := make([][]string, 0, len(rows))
+	for _, row := range rows {
+		empty := true
+		for _, cell := range row {
+			if strings.TrimSpace(cell) != "" {
+				empty = false
+				break
+			}
+		}
+		if !empty {
+			out = append(out, row)
+		}
+	}
+
+	if len(out) == 0 {
+		return nil, errors.New("xlsx worksheet is empty")
+	}
+
+	// Pad short rows to the header width
+	width := len(out[0])
+	for i, row := range out {
+		if len(row) < width {
+			out[i] = append(row, make([]string, width-len(row))...)
+		}
+	}
+
+	return out, nil
 }
 
 // parseHeaders parses the homebox headers from the CSV file and returns a map of the headers

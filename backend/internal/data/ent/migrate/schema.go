@@ -139,6 +139,8 @@ var (
 		{Name: "import_ref", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 1000},
 		{Name: "quantity", Type: field.TypeFloat64, Default: 1},
+		{Name: "low_stock_threshold", Type: field.TypeFloat64, Nullable: true},
+		{Name: "low_stock_notified", Type: field.TypeBool, Default: false},
 		{Name: "insured", Type: field.TypeBool, Default: false},
 		{Name: "archived", Type: field.TypeBool, Default: false},
 		{Name: "asset_id", Type: field.TypeInt64, Default: 0},
@@ -168,19 +170,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "entities_entities_children",
-				Columns:    []*schema.Column{EntitiesColumns[25]},
+				Columns:    []*schema.Column{EntitiesColumns[27]},
 				RefColumns: []*schema.Column{EntitiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "entities_entity_types_entities",
-				Columns:    []*schema.Column{EntitiesColumns[26]},
+				Columns:    []*schema.Column{EntitiesColumns[28]},
 				RefColumns: []*schema.Column{EntityTypesColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "entities_groups_entities",
-				Columns:    []*schema.Column{EntitiesColumns[27]},
+				Columns:    []*schema.Column{EntitiesColumns[29]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -194,27 +196,27 @@ var (
 			{
 				Name:    "entity_manufacturer",
 				Unique:  false,
-				Columns: []*schema.Column{EntitiesColumns[14]},
+				Columns: []*schema.Column{EntitiesColumns[16]},
 			},
 			{
 				Name:    "entity_model_number",
 				Unique:  false,
-				Columns: []*schema.Column{EntitiesColumns[13]},
+				Columns: []*schema.Column{EntitiesColumns[15]},
 			},
 			{
 				Name:    "entity_serial_number",
 				Unique:  false,
-				Columns: []*schema.Column{EntitiesColumns[12]},
+				Columns: []*schema.Column{EntitiesColumns[14]},
 			},
 			{
 				Name:    "entity_archived",
 				Unique:  false,
-				Columns: []*schema.Column{EntitiesColumns[9]},
+				Columns: []*schema.Column{EntitiesColumns[11]},
 			},
 			{
 				Name:    "entity_asset_id",
 				Unique:  false,
-				Columns: []*schema.Column{EntitiesColumns[10]},
+				Columns: []*schema.Column{EntitiesColumns[12]},
 			},
 		},
 	}
@@ -333,7 +335,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"export", "import"}, Default: "export"},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"export", "import", "backup"}, Default: "export"},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "running", "completed", "failed"}, Default: "pending"},
 		{Name: "progress", Type: field.TypeInt, Default: 0},
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
@@ -585,6 +587,7 @@ var (
 		{Name: "password", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "is_superuser", Type: field.TypeBool, Default: false},
 		{Name: "superuser", Type: field.TypeBool, Default: false},
+		{Name: "disabled", Type: field.TypeBool, Default: false},
 		{Name: "activated_on", Type: field.TypeTime, Nullable: true},
 		{Name: "oidc_issuer", Type: field.TypeString, Nullable: true},
 		{Name: "oidc_subject", Type: field.TypeString, Nullable: true},
@@ -600,7 +603,7 @@ var (
 			{
 				Name:    "user_oidc_issuer_oidc_subject",
 				Unique:  true,
-				Columns: []*schema.Column{UsersColumns[9], UsersColumns[10]},
+				Columns: []*schema.Column{UsersColumns[10], UsersColumns[11]},
 			},
 		},
 	}
