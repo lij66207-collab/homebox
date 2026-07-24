@@ -57,10 +57,6 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 		purgeStaleExports(ctx, app, 7*24*time.Hour, false)
 	}))
 
-	runner.AddPlugin(NewTask("purge-stale-backups", 24*time.Hour, func(ctx context.Context) {
-		purgeStaleExports(ctx, app, time.Duration(cfg.Backup.RetentionDays)*24*time.Hour, true)
-	}))
-
 	runner.AddPlugin(NewTask("run-backup-schedules", time.Minute, func(ctx context.Context) {
 		runBackupSchedules(ctx, app)
 	}))
@@ -81,25 +77,6 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 			}
 		}
 	}))
-
-	if cfg.Backup.Enabled {
-		runner.AddPlugin(NewTask("scheduled-backup", time.Hour, func(ctx context.Context) {
-			if time.Now().Hour() != cfg.Backup.Hour {
-				return
-			}
-			groups, err := app.repos.Groups.GetAllGroups(ctx, uuid.Nil)
-			if err != nil {
-				log.Error().Err(err).Msg("scheduled backup: failed to list groups")
-				return
-			}
-			for i := range groups {
-				if _, err := app.services.Exports.EnqueueBackup(ctx, groups[i].ID); err != nil {
-					log.Error().Err(err).Str("group_id", groups[i].ID.String()).Msg("scheduled backup: failed to enqueue")
-				}
-			}
-			log.Info().Int("groups", len(groups)).Msg("scheduled backup enqueued")
-		}))
-	}
 
 	runner.AddFunc("collection-export-subscription", func(ctx context.Context) error {
 		return runJobSubscription(ctx, cfg, "collection_export", func(ctx context.Context, msg *pubsub.Message) {
@@ -290,16 +267,14 @@ func runJobSubscription(ctx context.Context, cfg *config.Config, topicName strin
 	}
 }
 
-// purgeStaleExports drops export rows and their blob artifacts older than a
-// week — long enough for users to re-download a backup, short enough to not
+// purgeStaleExports deletes export rows and their blob artifacts older than
+// maxAge — long enough for users to re-download a backup, short enough to not
 // pile up. The blob is deleted before the row because the row holds the only
 // ArtifactPath pointer; dropping the row first would orphan the blob if the
 // bucket is unavailable. Failed rows stay so the next sweep retries.
-// purgeStaleExports deletes export rows and their blob artifacts older than
-// maxAge. When backupsOnly is true only scheduled-backup rows are purged
-// (their retention is configured separately); when false, backup rows are
-// skipped so manual exports/imports follow the short 7-day retention while
-// backups live as long as cfg.Backup.RetentionDays allows.
+// When backupsOnly is true only legacy scheduled-backup (kind=backup) rows
+// are purged; when false they are skipped so manual exports/imports follow
+// the short 7-day retention.
 func purgeStaleExports(ctx context.Context, app *app, maxAge time.Duration, backupsOnly bool) {
 	cutoff := time.Now().Add(-maxAge)
 	candidates, err := app.repos.Exports.ListOlderThan(ctx, cutoff)

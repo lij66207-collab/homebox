@@ -42,12 +42,3 @@ func TestAdminSetDisabled(t *testing.T) {
 	_, err = tSvc.User.Login(ctx, usr.Email, "re-enabled-password", false)
 	require.NoError(t, err)
 }
-
-func TestEnqueueBackup_CreatesBackupKindRow(t *testing.T) {
-	ctx := context.Background()
-
-	out, err := tSvc.Exports.EnqueueBackup(ctx, tGroup.ID)
-	require.NoError(t, err)
-	assert.Equal(t, "backup", out.Kind)
-	assert.Equal(t, "pending", out.Status)
-}
