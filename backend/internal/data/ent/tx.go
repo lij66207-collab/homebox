@@ -20,6 +20,8 @@ type Tx struct {
 	AuthRoles *AuthRolesClient
 	// AuthTokens is the client for interacting with the AuthTokens builders.
 	AuthTokens *AuthTokensClient
+	// BackupSchedule is the client for interacting with the BackupSchedule builders.
+	BackupSchedule *BackupScheduleClient
 	// Entity is the client for interacting with the Entity builders.
 	Entity *EntityClient
 	// EntityField is the client for interacting with the EntityField builders.
@@ -183,6 +185,7 @@ func (tx *Tx) init() {
 	tx.Attachment = NewAttachmentClient(tx.config)
 	tx.AuthRoles = NewAuthRolesClient(tx.config)
 	tx.AuthTokens = NewAuthTokensClient(tx.config)
+	tx.BackupSchedule = NewBackupScheduleClient(tx.config)
 	tx.Entity = NewEntityClient(tx.config)
 	tx.EntityField = NewEntityFieldClient(tx.config)
 	tx.EntityTemplate = NewEntityTemplateClient(tx.config)

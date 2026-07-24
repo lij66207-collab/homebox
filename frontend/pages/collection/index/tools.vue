@@ -76,7 +76,15 @@
               </thead>
               <tbody>
                 <tr v-for="b in backups" :key="b.id" class="border-t">
-                  <td class="py-2">{{ formatCreated(b.createdAt) }}</td>
+                  <td class="py-2">
+                    {{ formatCreated(b.createdAt) }}
+                    <span
+                      v-if="b.trigger === 'scheduled'"
+                      class="ml-1 rounded bg-secondary px-1 py-0.5 text-xs text-secondary-foreground"
+                    >
+                      {{ $t("tools.backups_set.scheduled_badge") }}
+                    </span>
+                  </td>
                   <td class="py-2">
                     <span>{{ b.status }}</span>
                     <span v-if="b.status === 'running'"> ({{ b.progress }}%)</span>
@@ -107,6 +115,59 @@
             </table>
             <p v-else class="text-sm text-muted-foreground">
               {{ $t("tools.backups_set.list_empty") }}
+            </p>
+          </div>
+          <div class="py-3">
+            <p class="font-medium">{{ $t("tools.backups_set.schedule") }}</p>
+            <p class="text-sm text-muted-foreground">{{ $t("tools.backups_set.schedule_sub") }}</p>
+            <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div class="flex items-center gap-2">
+                <Switch id="backup-schedule-enabled" v-model:checked="schedule.enabled" />
+                <Label for="backup-schedule-enabled">{{ $t("tools.backups_set.schedule_enabled") }}</Label>
+              </div>
+              <div class="flex items-center gap-2">
+                <Label for="backup-schedule-frequency">{{ $t("tools.backups_set.schedule_frequency") }}</Label>
+                <Select id="backup-schedule-frequency" v-model="schedule.frequency">
+                  <SelectTrigger class="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">{{ $t("tools.backups_set.schedule_daily") }}</SelectItem>
+                    <SelectItem value="weekly">{{ $t("tools.backups_set.schedule_weekly") }}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div class="flex items-center gap-2">
+                <Label for="backup-schedule-time">{{ $t("tools.backups_set.schedule_time") }}</Label>
+                <input
+                  id="backup-schedule-time"
+                  v-model="schedule.timeOfDay"
+                  type="time"
+                  class="rounded-md border bg-background px-2 py-1 text-sm"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <Label for="backup-schedule-retention">{{ $t("tools.backups_set.schedule_retention") }}</Label>
+                <input
+                  id="backup-schedule-retention"
+                  v-model.number="schedule.retention"
+                  type="number"
+                  min="1"
+                  max="100"
+                  class="w-20 rounded-md border bg-background px-2 py-1 text-sm"
+                />
+              </div>
+              <button
+                class="rounded bg-primary px-3 py-1 text-primary-foreground disabled:opacity-50"
+                :disabled="scheduleSaving"
+                @click="saveSchedule"
+              >
+                {{ $t("tools.backups_set.schedule_save") }}
+              </button>
+            </div>
+            <p class="mt-2 text-xs text-muted-foreground">
+              {{ $t("tools.backups_set.schedule_last_run") }}: {{ formatScheduleTime(scheduleMeta.lastRunAt) }} ·
+              {{ $t("tools.backups_set.schedule_next_run") }}: {{ formatScheduleTime(scheduleMeta.nextRunAt) }}
             </p>
           </div>
           <DetailAction>
@@ -184,6 +245,10 @@
   import MdiPackageVariant from "~icons/mdi/package-variant";
   import { ServerEvent, onServerEvent } from "@/composables/use-server-events";
   import type { CollectionExport } from "@/lib/api/classes/backups";
+  import type { BackupScheduleUpdateRequest } from "@/lib/api/types/data-contracts";
+  import { Switch } from "@/components/ui/switch";
+  import { Label } from "@/components/ui/label";
+  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import { useDialog } from "~/components/ui/dialog-provider";
   import { DialogID } from "~/components/ui/dialog-provider/utils";
   import AppImportDialog from "@/components/App/ImportDialog.vue";
@@ -343,7 +408,7 @@
     return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
   }
 
-  function formatCreated(iso: string): string {
+  function formatCreated(iso: string | Date): string {
     return new Date(iso).toLocaleString();
   }
 
@@ -355,6 +420,53 @@
     }
     toast.success(t("tools.toast.backup_started"));
     await refreshBackups();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scheduled Backups
+  // ---------------------------------------------------------------------------
+
+  const schedule = ref<BackupScheduleUpdateRequest>({
+    enabled: false,
+    frequency: "daily",
+    timeOfDay: "03:00",
+    retention: 7,
+  });
+  const scheduleMeta = ref<{ lastRunAt?: string | null; nextRunAt?: string | null }>({});
+  const scheduleSaving = ref(false);
+
+  async function refreshSchedule() {
+    const { data, error } = await api.backups.getSchedule();
+    if (error || !data) {
+      return;
+    }
+    schedule.value = {
+      enabled: data.enabled,
+      frequency: data.frequency === "weekly" ? "weekly" : "daily",
+      timeOfDay: data.timeOfDay || "03:00",
+      retention: data.retention || 7,
+    };
+    scheduleMeta.value = { lastRunAt: data.lastRunAt, nextRunAt: data.nextRunAt };
+  }
+
+  refreshSchedule();
+
+  function formatScheduleTime(iso?: string | null): string {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
+  }
+
+  async function saveSchedule() {
+    scheduleSaving.value = true;
+    const { error } = await api.backups.updateSchedule({ ...schedule.value });
+    scheduleSaving.value = false;
+    if (error) {
+      toast.error(t("tools.toast.schedule_save_failed"));
+      return;
+    }
+    toast.success(t("tools.toast.schedule_saved"));
+    await refreshSchedule();
   }
 
   async function deleteBackup(id: string) {

@@ -48,6 +48,14 @@ func (Export) Fields() []ent.Field {
 			Optional(),
 		field.Int64("size_bytes").
 			Default(0),
+		// trigger distinguishes user-initiated exports from ones produced by
+		// the group's backup schedule. Only trigger=scheduled rows are subject
+		// to the schedule's retention pruning. The storage key avoids the
+		// "trigger" keyword collision on some SQL dialects.
+		field.Enum("trigger").
+			Values("manual", "scheduled").
+			Default("manual").
+			StorageKey("export_trigger"),
 		field.String("error").
 			MaxLen(1000).
 			Optional(),

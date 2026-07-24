@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/backupschedule"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytype"
@@ -191,6 +192,21 @@ func (_u *GroupUpdate) AddExports(v ...*Export) *GroupUpdate {
 	return _u.AddExportIDs(ids...)
 }
 
+// AddBackupScheduleIDs adds the "backup_schedule" edge to the BackupSchedule entity by IDs.
+func (_u *GroupUpdate) AddBackupScheduleIDs(ids ...uuid.UUID) *GroupUpdate {
+	_u.mutation.AddBackupScheduleIDs(ids...)
+	return _u
+}
+
+// AddBackupSchedule adds the "backup_schedule" edges to the BackupSchedule entity.
+func (_u *GroupUpdate) AddBackupSchedule(v ...*BackupSchedule) *GroupUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBackupScheduleIDs(ids...)
+}
+
 // Mutation returns the GroupMutation object of the builder.
 func (_u *GroupUpdate) Mutation() *GroupMutation {
 	return _u.mutation
@@ -362,6 +378,27 @@ func (_u *GroupUpdate) RemoveExports(v ...*Export) *GroupUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveExportIDs(ids...)
+}
+
+// ClearBackupSchedule clears all "backup_schedule" edges to the BackupSchedule entity.
+func (_u *GroupUpdate) ClearBackupSchedule() *GroupUpdate {
+	_u.mutation.ClearBackupSchedule()
+	return _u
+}
+
+// RemoveBackupScheduleIDs removes the "backup_schedule" edge to BackupSchedule entities by IDs.
+func (_u *GroupUpdate) RemoveBackupScheduleIDs(ids ...uuid.UUID) *GroupUpdate {
+	_u.mutation.RemoveBackupScheduleIDs(ids...)
+	return _u
+}
+
+// RemoveBackupSchedule removes "backup_schedule" edges to BackupSchedule entities.
+func (_u *GroupUpdate) RemoveBackupSchedule(v ...*BackupSchedule) *GroupUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBackupScheduleIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -803,6 +840,51 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.BackupScheduleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.BackupScheduleTable,
+			Columns: []string{group.BackupScheduleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(backupschedule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBackupScheduleIDs(); len(nodes) > 0 && !_u.mutation.BackupScheduleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.BackupScheduleTable,
+			Columns: []string{group.BackupScheduleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(backupschedule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BackupScheduleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.BackupScheduleTable,
+			Columns: []string{group.BackupScheduleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(backupschedule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{group.Label}
@@ -977,6 +1059,21 @@ func (_u *GroupUpdateOne) AddExports(v ...*Export) *GroupUpdateOne {
 	return _u.AddExportIDs(ids...)
 }
 
+// AddBackupScheduleIDs adds the "backup_schedule" edge to the BackupSchedule entity by IDs.
+func (_u *GroupUpdateOne) AddBackupScheduleIDs(ids ...uuid.UUID) *GroupUpdateOne {
+	_u.mutation.AddBackupScheduleIDs(ids...)
+	return _u
+}
+
+// AddBackupSchedule adds the "backup_schedule" edges to the BackupSchedule entity.
+func (_u *GroupUpdateOne) AddBackupSchedule(v ...*BackupSchedule) *GroupUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBackupScheduleIDs(ids...)
+}
+
 // Mutation returns the GroupMutation object of the builder.
 func (_u *GroupUpdateOne) Mutation() *GroupMutation {
 	return _u.mutation
@@ -1148,6 +1245,27 @@ func (_u *GroupUpdateOne) RemoveExports(v ...*Export) *GroupUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveExportIDs(ids...)
+}
+
+// ClearBackupSchedule clears all "backup_schedule" edges to the BackupSchedule entity.
+func (_u *GroupUpdateOne) ClearBackupSchedule() *GroupUpdateOne {
+	_u.mutation.ClearBackupSchedule()
+	return _u
+}
+
+// RemoveBackupScheduleIDs removes the "backup_schedule" edge to BackupSchedule entities by IDs.
+func (_u *GroupUpdateOne) RemoveBackupScheduleIDs(ids ...uuid.UUID) *GroupUpdateOne {
+	_u.mutation.RemoveBackupScheduleIDs(ids...)
+	return _u
+}
+
+// RemoveBackupSchedule removes "backup_schedule" edges to BackupSchedule entities.
+func (_u *GroupUpdateOne) RemoveBackupSchedule(v ...*BackupSchedule) *GroupUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBackupScheduleIDs(ids...)
 }
 
 // Where appends a list predicates to the GroupUpdate builder.
@@ -1612,6 +1730,51 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(export.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BackupScheduleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.BackupScheduleTable,
+			Columns: []string{group.BackupScheduleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(backupschedule.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBackupScheduleIDs(); len(nodes) > 0 && !_u.mutation.BackupScheduleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.BackupScheduleTable,
+			Columns: []string{group.BackupScheduleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(backupschedule.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BackupScheduleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   group.BackupScheduleTable,
+			Columns: []string{group.BackupScheduleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(backupschedule.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

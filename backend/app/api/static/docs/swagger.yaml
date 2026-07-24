@@ -30,6 +30,16 @@ definitions:
     - RoleAdmin
     - RoleUser
     - RoleAttachments
+  backupschedule.Frequency:
+    enum:
+    - daily
+    - daily
+    - weekly
+    type: string
+    x-enum-varnames:
+    - DefaultFrequency
+    - FrequencyDaily
+    - FrequencyWeekly
   currencies.Currency:
     properties:
       code:
@@ -185,6 +195,53 @@ definitions:
         - $ref: '#/definitions/ent.User'
         description: User holds the value of the user edge.
     type: object
+  ent.BackupSchedule:
+    properties:
+      created_at:
+        description: CreatedAt holds the value of the "created_at" field.
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.BackupScheduleEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the BackupScheduleQuery when eager-loading is set.
+      enabled:
+        description: Enabled holds the value of the "enabled" field.
+        type: boolean
+      frequency:
+        allOf:
+        - $ref: '#/definitions/backupschedule.Frequency'
+        description: Frequency holds the value of the "frequency" field.
+      group_id:
+        description: GroupID holds the value of the "group_id" field.
+        type: string
+      id:
+        description: ID of the ent.
+        type: string
+      last_run_at:
+        description: LastRunAt holds the value of the "last_run_at" field.
+        type: string
+      next_run_at:
+        description: NextRunAt holds the value of the "next_run_at" field.
+        type: string
+      retention:
+        description: Retention holds the value of the "retention" field.
+        type: integer
+      time_of_day:
+        description: TimeOfDay holds the value of the "time_of_day" field.
+        type: string
+      updated_at:
+        description: UpdatedAt holds the value of the "updated_at" field.
+        type: string
+    type: object
+  ent.BackupScheduleEdges:
+    properties:
+      group:
+        allOf:
+        - $ref: '#/definitions/ent.Group'
+        description: Group holds the value of the group edge.
+    type: object
   ent.Entity:
     properties:
       archived:
@@ -217,14 +274,6 @@ definitions:
       lifetime_warranty:
         description: LifetimeWarranty holds the value of the "lifetime_warranty" field.
         type: boolean
-      low_stock_notified:
-        description: LowStockNotified holds the value of the "low_stock_notified"
-          field.
-        type: boolean
-      low_stock_threshold:
-        description: LowStockThreshold holds the value of the "low_stock_threshold"
-          field.
-        type: number
       manufacturer:
         description: Manufacturer holds the value of the "manufacturer" field.
         type: string
@@ -535,6 +584,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/export.Status'
         description: Status holds the value of the "status" field.
+      trigger:
+        allOf:
+        - $ref: '#/definitions/export.Trigger'
+        description: Trigger holds the value of the "trigger" field.
       updated_at:
         description: UpdatedAt holds the value of the "updated_at" field.
         type: string
@@ -572,6 +625,11 @@ definitions:
     type: object
   ent.GroupEdges:
     properties:
+      backup_schedule:
+        description: BackupSchedule holds the value of the backup_schedule edge.
+        items:
+          $ref: '#/definitions/ent.BackupSchedule'
+        type: array
       entities:
         description: Entities holds the value of the entities edge.
         items:
@@ -886,9 +944,6 @@ definitions:
       default_group_id:
         description: DefaultGroupID holds the value of the "default_group_id" field.
         type: string
-      disabled:
-        description: Disabled holds the value of the "disabled" field.
-        type: boolean
       edges:
         allOf:
         - $ref: '#/definitions/ent.UserEdges'
@@ -1005,13 +1060,11 @@ definitions:
     - export
     - export
     - import
-    - backup
     type: string
     x-enum-varnames:
     - DefaultKind
     - KindExport
     - KindImport
-    - KindBackup
   export.Status:
     enum:
     - pending
@@ -1026,6 +1079,16 @@ definitions:
     - StatusRunning
     - StatusCompleted
     - StatusFailed
+  export.Trigger:
+    enum:
+    - manual
+    - manual
+    - scheduled
+    type: string
+    x-enum-varnames:
+    - DefaultTrigger
+    - TriggerManual
+    - TriggerScheduled
   repo.APIKeyCreate:
     properties:
       expiresAt:
@@ -1072,6 +1135,29 @@ definitions:
       name:
         type: string
       userId:
+        type: string
+    type: object
+  repo.BackupScheduleOut:
+    properties:
+      createdAt:
+        type: string
+      enabled:
+        type: boolean
+      frequency:
+        type: string
+      groupId:
+        type: string
+      id:
+        type: string
+      lastRunAt:
+        type: string
+      nextRunAt:
+        type: string
+      retention:
+        type: integer
+      timeOfDay:
+        type: string
+      updatedAt:
         type: string
     type: object
   repo.BarcodeProduct:
@@ -1227,13 +1313,6 @@ definitions:
           items ultimately live in. Nil for top-level entities.
         x-nullable: true
         x-omitempty: true
-      lowStockNotified:
-        type: boolean
-      lowStockThreshold:
-        description: Low stock
-        type: number
-        x-nullable: true
-        x-omitempty: true
       manufacturer:
         type: string
       modelNumber:
@@ -1355,13 +1434,6 @@ definitions:
       itemCount:
         description: Container-specific (populated when querying locations)
         type: number
-      lowStockNotified:
-        type: boolean
-      lowStockThreshold:
-        description: Low stock
-        type: number
-        x-nullable: true
-        x-omitempty: true
       name:
         type: string
       parent:
@@ -1650,11 +1722,6 @@ definitions:
       lifetimeWarranty:
         description: Warranty
         type: boolean
-      lowStockThreshold:
-        description: Low stock — nil clears the threshold
-        type: number
-        x-nullable: true
-        x-omitempty: true
       manufacturer:
         type: string
       modelNumber:
@@ -1734,6 +1801,12 @@ definitions:
       sizeBytes:
         type: integer
       status:
+        type: string
+      trigger:
+        description: |-
+          Trigger is "manual" for user-initiated exports and "scheduled" for
+          ones produced by the group's backup schedule. Only scheduled exports
+          are subject to the schedule's retention pruning.
         type: string
       updatedAt:
         type: string
@@ -2097,8 +2170,6 @@ definitions:
     properties:
       defaultGroupId:
         type: string
-      disabled:
-        type: boolean
       email:
         type: string
       groupIds:
@@ -2272,35 +2343,25 @@ definitions:
       completed:
         type: integer
     type: object
-  v1.AdminResetLinkResponse:
+  v1.BackupScheduleUpdateRequest:
     properties:
-      link:
-        type: string
-    type: object
-  v1.AdminSetDisabledRequest:
-    properties:
-      disabled:
+      enabled:
         type: boolean
-    type: object
-  v1.AdminSetPasswordRequest:
-    properties:
-      password:
+      frequency:
+        enum:
+        - daily
+        - weekly
+        type: string
+      retention:
+        maximum: 100
+        minimum: 1
+        type: integer
+      timeOfDay:
         type: string
     required:
-    - password
-    type: object
-  v1.AdminUserCreateRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - name
-    - password
+    - frequency
+    - retention
+    - timeOfDay
     type: object
   v1.Build:
     properties:
@@ -2588,182 +2649,6 @@ paths:
       summary: Zero Out Time Fields
       tags:
       - Actions
-  /v1/admin/users:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/repo.UserOut'
-            type: array
-        "403":
-          description: Not a superuser
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: List all users (superuser only)
-      tags:
-      - Admin
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: User Data
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/v1.AdminUserCreateRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            allOf:
-            - $ref: '#/definitions/v1.Wrapped'
-            - properties:
-                item:
-                  $ref: '#/definitions/repo.UserOut'
-              type: object
-        "403":
-          description: Not a superuser
-          schema:
-            type: string
-        "409":
-          description: Email already in use
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Create a user (superuser only)
-      tags:
-      - Admin
-  /v1/admin/users/{id}:
-    delete:
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Cannot delete own account via admin API
-          schema:
-            type: string
-        "403":
-          description: Not a superuser
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Delete a user (superuser only)
-      tags:
-      - Admin
-  /v1/admin/users/{id}/disabled:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Disabled flag
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/v1.AdminSetDisabledRequest'
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Cannot disable own account
-          schema:
-            type: string
-        "403":
-          description: Not a superuser
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Disable or re-enable a user account (superuser only)
-      tags:
-      - Admin
-  /v1/admin/users/{id}/password:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: New password
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/v1.AdminSetPasswordRequest'
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Password too short
-          schema:
-            type: string
-        "403":
-          description: Not a superuser
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Set a user's password directly (superuser only)
-      tags:
-      - Admin
-  /v1/admin/users/{id}/reset-link:
-    post:
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/v1.Wrapped'
-            - properties:
-                item:
-                  $ref: '#/definitions/v1.AdminResetLinkResponse'
-              type: object
-        "403":
-          description: Not a superuser
-          schema:
-            type: string
-        "404":
-          description: User not found
-          schema:
-            type: string
-      security:
-      - Bearer: []
-      summary: Generate a one-time password reset link for a user (superuser only)
-      tags:
-      - Admin
   /v1/assets/{id}:
     get:
       parameters:
@@ -3478,6 +3363,44 @@ paths:
       summary: Update Entity Type
       tags:
       - Entity Types
+  /v1/group/backup-schedule:
+    get:
+      description: Returns the caller group's recurring backup schedule. Groups that
+        never configured one get the default (disabled) schedule instead of a 404.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/repo.BackupScheduleOut'
+      security:
+      - Bearer: []
+      summary: Get the Backup Schedule
+      tags:
+      - Group
+    put:
+      description: Creates or replaces the caller group's recurring backup schedule
+        and recomputes next_run_at. Disabled schedules get next_run_at cleared.
+      parameters:
+      - description: Backup schedule
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/v1.BackupScheduleUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/repo.BackupScheduleOut'
+      security:
+      - Bearer: []
+      summary: Upsert the Backup Schedule
+      tags:
+      - Group
   /v1/group/exports:
     get:
       description: Returns export job rows for the caller's group, newest first.

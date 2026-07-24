@@ -1,5 +1,10 @@
 import { BaseAPI, route } from "../base";
-import type { ExportOut, ResultsRepoExportOut } from "../types/data-contracts";
+import type {
+  BackupScheduleOut,
+  BackupScheduleUpdateRequest,
+  ExportOut,
+  ResultsRepoExportOut,
+} from "../types/data-contracts";
 
 /**
  * Re-export so consumers only need to import from this module. The shape is
@@ -44,6 +49,21 @@ export class BackupsAPI extends BaseAPI {
   /** Returns the URL to download the artifact directly. */
   downloadURL(id: string) {
     return route(`/group/exports/${id}/download`);
+  }
+
+  /** Get the scheduled-backup configuration for the current group. */
+  getSchedule() {
+    return this.http.get<BackupScheduleOut>({
+      url: route("/group/backup-schedule"),
+    });
+  }
+
+  /** Create or update the scheduled-backup configuration. */
+  updateSchedule(body: BackupScheduleUpdateRequest) {
+    return this.http.put<BackupScheduleUpdateRequest, BackupScheduleOut>({
+      url: route("/group/backup-schedule"),
+      body,
+    });
   }
 
   /**

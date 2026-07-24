@@ -470,6 +470,29 @@ func HasExportsWith(preds ...predicate.Export) predicate.Group {
 	})
 }
 
+// HasBackupSchedule applies the HasEdge predicate on the "backup_schedule" edge.
+func HasBackupSchedule() predicate.Group {
+	return predicate.Group(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BackupScheduleTable, BackupScheduleColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBackupScheduleWith applies the HasEdge predicate on the "backup_schedule" edge with a given conditions (other predicates).
+func HasBackupScheduleWith(preds ...predicate.BackupSchedule) predicate.Group {
+	return predicate.Group(func(s *sql.Selector) {
+		step := newBackupScheduleStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasUserGroups applies the HasEdge predicate on the "user_groups" edge.
 func HasUserGroups() predicate.Group {
 	return predicate.Group(func(s *sql.Selector) {

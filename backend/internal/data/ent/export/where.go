@@ -386,6 +386,26 @@ func SizeBytesLTE(v int64) predicate.Export {
 	return predicate.Export(sql.FieldLTE(FieldSizeBytes, v))
 }
 
+// TriggerEQ applies the EQ predicate on the "trigger" field.
+func TriggerEQ(v Trigger) predicate.Export {
+	return predicate.Export(sql.FieldEQ(FieldTrigger, v))
+}
+
+// TriggerNEQ applies the NEQ predicate on the "trigger" field.
+func TriggerNEQ(v Trigger) predicate.Export {
+	return predicate.Export(sql.FieldNEQ(FieldTrigger, v))
+}
+
+// TriggerIn applies the In predicate on the "trigger" field.
+func TriggerIn(vs ...Trigger) predicate.Export {
+	return predicate.Export(sql.FieldIn(FieldTrigger, vs...))
+}
+
+// TriggerNotIn applies the NotIn predicate on the "trigger" field.
+func TriggerNotIn(vs ...Trigger) predicate.Export {
+	return predicate.Export(sql.FieldNotIn(FieldTrigger, vs...))
+}
+
 // ErrorEQ applies the EQ predicate on the "error" field.
 func ErrorEQ(v string) predicate.Export {
 	return predicate.Export(sql.FieldEQ(FieldError, v))

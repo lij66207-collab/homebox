@@ -35,6 +35,8 @@ type Export struct {
 	ArtifactPath string `json:"artifact_path,omitempty"`
 	// SizeBytes holds the value of the "size_bytes" field.
 	SizeBytes int64 `json:"size_bytes,omitempty"`
+	// Trigger holds the value of the "trigger" field.
+	Trigger export.Trigger `json:"trigger,omitempty"`
 	// Error holds the value of the "error" field.
 	Error string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -70,7 +72,7 @@ func (*Export) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case export.FieldProgress, export.FieldSizeBytes:
 			values[i] = new(sql.NullInt64)
-		case export.FieldKind, export.FieldStatus, export.FieldArtifactPath, export.FieldError:
+		case export.FieldKind, export.FieldStatus, export.FieldArtifactPath, export.FieldTrigger, export.FieldError:
 			values[i] = new(sql.NullString)
 		case export.FieldCreatedAt, export.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -145,6 +147,12 @@ func (_m *Export) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SizeBytes = value.Int64
 			}
+		case export.FieldTrigger:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field trigger", values[i])
+			} else if value.Valid {
+				_m.Trigger = export.Trigger(value.String)
+			}
 		case export.FieldError:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field error", values[i])
@@ -215,6 +223,9 @@ func (_m *Export) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("size_bytes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SizeBytes))
+	builder.WriteString(", ")
+	builder.WriteString("trigger=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Trigger))
 	builder.WriteString(", ")
 	builder.WriteString("error=")
 	builder.WriteString(_m.Error)

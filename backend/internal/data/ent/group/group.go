@@ -39,6 +39,8 @@ const (
 	EdgeEntityTemplates = "entity_templates"
 	// EdgeExports holds the string denoting the exports edge name in mutations.
 	EdgeExports = "exports"
+	// EdgeBackupSchedule holds the string denoting the backup_schedule edge name in mutations.
+	EdgeBackupSchedule = "backup_schedule"
 	// EdgeUserGroups holds the string denoting the user_groups edge name in mutations.
 	EdgeUserGroups = "user_groups"
 	// Table holds the table name of the group in the database.
@@ -97,6 +99,13 @@ const (
 	ExportsInverseTable = "exports"
 	// ExportsColumn is the table column denoting the exports relation/edge.
 	ExportsColumn = "group_id"
+	// BackupScheduleTable is the table that holds the backup_schedule relation/edge.
+	BackupScheduleTable = "backup_schedules"
+	// BackupScheduleInverseTable is the table name for the BackupSchedule entity.
+	// It exists in this package in order to avoid circular dependency with the "backupschedule" package.
+	BackupScheduleInverseTable = "backup_schedules"
+	// BackupScheduleColumn is the table column denoting the backup_schedule relation/edge.
+	BackupScheduleColumn = "group_id"
 	// UserGroupsTable is the table that holds the user_groups relation/edge.
 	UserGroupsTable = "user_groups"
 	// UserGroupsInverseTable is the table name for the UserGroup entity.
@@ -286,6 +295,20 @@ func ByExports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByBackupScheduleCount orders the results by backup_schedule count.
+func ByBackupScheduleCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBackupScheduleStep(), opts...)
+	}
+}
+
+// ByBackupSchedule orders the results by backup_schedule terms.
+func ByBackupSchedule(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBackupScheduleStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserGroupsCount orders the results by user_groups count.
 func ByUserGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -353,6 +376,13 @@ func newExportsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ExportsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ExportsTable, ExportsColumn),
+	)
+}
+func newBackupScheduleStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BackupScheduleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BackupScheduleTable, BackupScheduleColumn),
 	)
 }
 func newUserGroupsStep() *sqlgraph.Step {

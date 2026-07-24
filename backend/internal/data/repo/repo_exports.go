@@ -31,6 +31,10 @@ type ExportOut struct {
 	ArtifactPath string    `json:"artifactPath,omitempty"`
 	SizeBytes    int64     `json:"sizeBytes"`
 	Error        string    `json:"error,omitempty"`
+	// Trigger is "manual" for user-initiated exports and "scheduled" for
+	// ones produced by the group's backup schedule. Only scheduled exports
+	// are subject to the schedule's retention pruning.
+	Trigger string `json:"trigger"`
 }
 
 func mapExport(e *ent.Export) ExportOut {
@@ -45,6 +49,7 @@ func mapExport(e *ent.Export) ExportOut {
 		ArtifactPath: e.ArtifactPath,
 		SizeBytes:    e.SizeBytes,
 		Error:        e.Error,
+		Trigger:      string(e.Trigger),
 	}
 }
 
@@ -70,6 +75,42 @@ func (r *ExportRepository) CreateBackup(ctx context.Context, gid uuid.UUID) (Exp
 		return ExportOut{}, err
 	}
 	return mapExport(e), nil
+}
+
+// CreateScheduled creates a pending row flagged trigger=scheduled so the
+// retention sweep can tell it apart from user-initiated exports.
+func (r *ExportRepository) CreateScheduled(ctx context.Context, gid uuid.UUID) (ExportOut, error) {
+	e, err := r.db.Export.Create().
+		SetGroupID(gid).
+		SetTrigger(export.TriggerScheduled).
+		Save(ctx)
+	if err != nil {
+		return ExportOut{}, err
+	}
+	return mapExport(e), nil
+}
+
+// ListScheduledCompleted returns the group's completed scheduled exports,
+// oldest first, so the retention sweep can prune everything beyond the
+// configured keep-count. Manual exports and import rows are excluded.
+func (r *ExportRepository) ListScheduledCompleted(ctx context.Context, gid uuid.UUID) ([]ExportOut, error) {
+	rows, err := r.db.Export.Query().
+		Where(
+			export.GroupID(gid),
+			export.KindEQ(export.KindExport),
+			export.StatusEQ(export.StatusCompleted),
+			export.TriggerEQ(export.TriggerScheduled),
+		).
+		Order(ent.Asc(export.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ExportOut, len(rows))
+	for i, e := range rows {
+		out[i] = mapExport(e)
+	}
+	return out, nil
 }
 
 // CreateImport stages a new pending row representing an upload that the

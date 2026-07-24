@@ -140,6 +140,20 @@ func (_u *ExportUpdate) AddSizeBytes(v int64) *ExportUpdate {
 	return _u
 }
 
+// SetTrigger sets the "trigger" field.
+func (_u *ExportUpdate) SetTrigger(v export.Trigger) *ExportUpdate {
+	_u.mutation.SetTrigger(v)
+	return _u
+}
+
+// SetNillableTrigger sets the "trigger" field if the given value is not nil.
+func (_u *ExportUpdate) SetNillableTrigger(v *export.Trigger) *ExportUpdate {
+	if v != nil {
+		_u.SetTrigger(*v)
+	}
+	return _u
+}
+
 // SetError sets the "error" field.
 func (_u *ExportUpdate) SetError(v string) *ExportUpdate {
 	_u.mutation.SetError(v)
@@ -224,6 +238,11 @@ func (_u *ExportUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Export.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Trigger(); ok {
+		if err := export.TriggerValidator(v); err != nil {
+			return &ValidationError{Name: "trigger", err: fmt.Errorf(`ent: validator failed for field "Export.trigger": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Error(); ok {
 		if err := export.ErrorValidator(v); err != nil {
 			return &ValidationError{Name: "error", err: fmt.Errorf(`ent: validator failed for field "Export.error": %w`, err)}
@@ -273,6 +292,9 @@ func (_u *ExportUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSizeBytes(); ok {
 		_spec.AddField(export.FieldSizeBytes, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Trigger(); ok {
+		_spec.SetField(export.FieldTrigger, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Error(); ok {
 		_spec.SetField(export.FieldError, field.TypeString, value)
@@ -439,6 +461,20 @@ func (_u *ExportUpdateOne) AddSizeBytes(v int64) *ExportUpdateOne {
 	return _u
 }
 
+// SetTrigger sets the "trigger" field.
+func (_u *ExportUpdateOne) SetTrigger(v export.Trigger) *ExportUpdateOne {
+	_u.mutation.SetTrigger(v)
+	return _u
+}
+
+// SetNillableTrigger sets the "trigger" field if the given value is not nil.
+func (_u *ExportUpdateOne) SetNillableTrigger(v *export.Trigger) *ExportUpdateOne {
+	if v != nil {
+		_u.SetTrigger(*v)
+	}
+	return _u
+}
+
 // SetError sets the "error" field.
 func (_u *ExportUpdateOne) SetError(v string) *ExportUpdateOne {
 	_u.mutation.SetError(v)
@@ -536,6 +572,11 @@ func (_u *ExportUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Export.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Trigger(); ok {
+		if err := export.TriggerValidator(v); err != nil {
+			return &ValidationError{Name: "trigger", err: fmt.Errorf(`ent: validator failed for field "Export.trigger": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Error(); ok {
 		if err := export.ErrorValidator(v); err != nil {
 			return &ValidationError{Name: "error", err: fmt.Errorf(`ent: validator failed for field "Export.error": %w`, err)}
@@ -602,6 +643,9 @@ func (_u *ExportUpdateOne) sqlSave(ctx context.Context) (_node *Export, err erro
 	}
 	if value, ok := _u.mutation.AddedSizeBytes(); ok {
 		_spec.AddField(export.FieldSizeBytes, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Trigger(); ok {
+		_spec.SetField(export.FieldTrigger, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.Error(); ok {
 		_spec.SetField(export.FieldError, field.TypeString, value)

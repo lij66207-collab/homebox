@@ -129,6 +129,40 @@ var (
 			},
 		},
 	}
+	// BackupSchedulesColumns holds the columns for the "backup_schedules" table.
+	BackupSchedulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "frequency", Type: field.TypeEnum, Enums: []string{"daily", "weekly"}, Default: "daily"},
+		{Name: "time_of_day", Type: field.TypeString, Default: "03:00"},
+		{Name: "retention", Type: field.TypeInt, Default: 7},
+		{Name: "last_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "next_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "group_id", Type: field.TypeUUID},
+	}
+	// BackupSchedulesTable holds the schema information for the "backup_schedules" table.
+	BackupSchedulesTable = &schema.Table{
+		Name:       "backup_schedules",
+		Columns:    BackupSchedulesColumns,
+		PrimaryKey: []*schema.Column{BackupSchedulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "backup_schedules_groups_backup_schedule",
+				Columns:    []*schema.Column{BackupSchedulesColumns[9]},
+				RefColumns: []*schema.Column{GroupsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "backupschedule_group_id",
+				Unique:  true,
+				Columns: []*schema.Column{BackupSchedulesColumns[9]},
+			},
+		},
+	}
 	// EntitiesColumns holds the columns for the "entities" table.
 	EntitiesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -340,6 +374,7 @@ var (
 		{Name: "progress", Type: field.TypeInt, Default: 0},
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
 		{Name: "size_bytes", Type: field.TypeInt64, Default: 0},
+		{Name: "export_trigger", Type: field.TypeEnum, Enums: []string{"manual", "scheduled"}, Default: "manual"},
 		{Name: "error", Type: field.TypeString, Nullable: true, Size: 1000},
 		{Name: "group_id", Type: field.TypeUUID},
 	}
@@ -351,7 +386,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "exports_groups_exports",
-				Columns:    []*schema.Column{ExportsColumns[9]},
+				Columns:    []*schema.Column{ExportsColumns[10]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -360,12 +395,12 @@ var (
 			{
 				Name:    "export_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{ExportsColumns[9]},
+				Columns: []*schema.Column{ExportsColumns[10]},
 			},
 			{
 				Name:    "export_group_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ExportsColumns[9], ExportsColumns[4]},
+				Columns: []*schema.Column{ExportsColumns[10], ExportsColumns[4]},
 			},
 		},
 	}
@@ -664,6 +699,7 @@ var (
 		AttachmentsTable,
 		AuthRolesTable,
 		AuthTokensTable,
+		BackupSchedulesTable,
 		EntitiesTable,
 		EntityFieldsTable,
 		EntityTemplatesTable,
@@ -688,6 +724,7 @@ func init() {
 	AttachmentsTable.ForeignKeys[1].RefTable = EntitiesTable
 	AuthRolesTable.ForeignKeys[0].RefTable = AuthTokensTable
 	AuthTokensTable.ForeignKeys[0].RefTable = UsersTable
+	BackupSchedulesTable.ForeignKeys[0].RefTable = GroupsTable
 	EntitiesTable.ForeignKeys[0].RefTable = EntitiesTable
 	EntitiesTable.ForeignKeys[1].RefTable = EntityTypesTable
 	EntitiesTable.ForeignKeys[2].RefTable = GroupsTable

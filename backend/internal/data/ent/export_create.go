@@ -126,6 +126,20 @@ func (_c *ExportCreate) SetNillableSizeBytes(v *int64) *ExportCreate {
 	return _c
 }
 
+// SetTrigger sets the "trigger" field.
+func (_c *ExportCreate) SetTrigger(v export.Trigger) *ExportCreate {
+	_c.mutation.SetTrigger(v)
+	return _c
+}
+
+// SetNillableTrigger sets the "trigger" field if the given value is not nil.
+func (_c *ExportCreate) SetNillableTrigger(v *export.Trigger) *ExportCreate {
+	if v != nil {
+		_c.SetTrigger(*v)
+	}
+	return _c
+}
+
 // SetError sets the "error" field.
 func (_c *ExportCreate) SetError(v string) *ExportCreate {
 	_c.mutation.SetError(v)
@@ -218,6 +232,10 @@ func (_c *ExportCreate) defaults() {
 		v := export.DefaultSizeBytes
 		_c.mutation.SetSizeBytes(v)
 	}
+	if _, ok := _c.mutation.Trigger(); !ok {
+		v := export.DefaultTrigger
+		_c.mutation.SetTrigger(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := export.DefaultID()
 		_c.mutation.SetID(v)
@@ -256,6 +274,14 @@ func (_c *ExportCreate) check() error {
 	}
 	if _, ok := _c.mutation.SizeBytes(); !ok {
 		return &ValidationError{Name: "size_bytes", err: errors.New(`ent: missing required field "Export.size_bytes"`)}
+	}
+	if _, ok := _c.mutation.Trigger(); !ok {
+		return &ValidationError{Name: "trigger", err: errors.New(`ent: missing required field "Export.trigger"`)}
+	}
+	if v, ok := _c.mutation.Trigger(); ok {
+		if err := export.TriggerValidator(v); err != nil {
+			return &ValidationError{Name: "trigger", err: fmt.Errorf(`ent: validator failed for field "Export.trigger": %w`, err)}
+		}
 	}
 	if v, ok := _c.mutation.Error(); ok {
 		if err := export.ErrorValidator(v); err != nil {
@@ -327,6 +353,10 @@ func (_c *ExportCreate) createSpec() (*Export, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SizeBytes(); ok {
 		_spec.SetField(export.FieldSizeBytes, field.TypeInt64, value)
 		_node.SizeBytes = value
+	}
+	if value, ok := _c.mutation.Trigger(); ok {
+		_spec.SetField(export.FieldTrigger, field.TypeEnum, value)
+		_node.Trigger = value
 	}
 	if value, ok := _c.mutation.Error(); ok {
 		_spec.SetField(export.FieldError, field.TypeString, value)

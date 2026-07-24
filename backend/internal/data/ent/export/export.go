@@ -32,6 +32,8 @@ const (
 	FieldArtifactPath = "artifact_path"
 	// FieldSizeBytes holds the string denoting the size_bytes field in the database.
 	FieldSizeBytes = "size_bytes"
+	// FieldTrigger holds the string denoting the trigger field in the database.
+	FieldTrigger = "export_trigger"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldProgress,
 	FieldArtifactPath,
 	FieldSizeBytes,
+	FieldTrigger,
 	FieldError,
 }
 
@@ -143,6 +146,32 @@ func StatusValidator(s Status) error {
 	}
 }
 
+// Trigger defines the type for the "trigger" enum field.
+type Trigger string
+
+// TriggerManual is the default value of the Trigger enum.
+const DefaultTrigger = TriggerManual
+
+// Trigger values.
+const (
+	TriggerManual    Trigger = "manual"
+	TriggerScheduled Trigger = "scheduled"
+)
+
+func (t Trigger) String() string {
+	return string(t)
+}
+
+// TriggerValidator is a validator for the "trigger" field enum values. It is called by the builders before save.
+func TriggerValidator(t Trigger) error {
+	switch t {
+	case TriggerManual, TriggerScheduled:
+		return nil
+	default:
+		return fmt.Errorf("export: invalid enum value for trigger field: %q", t)
+	}
+}
+
 // OrderOption defines the ordering options for the Export queries.
 type OrderOption func(*sql.Selector)
 
@@ -189,6 +218,11 @@ func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
 // BySizeBytes orders the results by the size_bytes field.
 func BySizeBytes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSizeBytes, opts...).ToFunc()
+}
+
+// ByTrigger orders the results by the trigger field.
+func ByTrigger(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrigger, opts...).ToFunc()
 }
 
 // ByError orders the results by the error field.

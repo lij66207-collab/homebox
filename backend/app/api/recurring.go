@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hay-kot/httpkit/graceful"
 	"github.com/rs/zerolog/log"
+	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/config"
 	"github.com/sysadminsmedia/homebox/backend/pkgs/utils"
 	"gocloud.dev/blob"
@@ -58,6 +59,10 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 
 	runner.AddPlugin(NewTask("purge-stale-backups", 24*time.Hour, func(ctx context.Context) {
 		purgeStaleExports(ctx, app, time.Duration(cfg.Backup.RetentionDays)*24*time.Hour, true)
+	}))
+
+	runner.AddPlugin(NewTask("run-backup-schedules", time.Minute, func(ctx context.Context) {
+		runBackupSchedules(ctx, app)
 	}))
 
 	runner.AddPlugin(NewTask("send-notifications", time.Hour, func(ctx context.Context) {
@@ -339,4 +344,46 @@ func purgeStaleExports(ctx context.Context, app *app, maxAge time.Duration, back
 		Int("purged", purged).
 		Int("candidates", len(candidates)).
 		Msg("purged stale collection exports")
+}
+
+// runBackupSchedules fires every enabled per-group backup schedule whose
+// next_run_at has arrived: it enqueues a trigger=scheduled export (the
+// pubsub worker builds the zip asynchronously), stamps last/next run, and
+// prunes the group's older scheduled backups down to the configured
+// retention. A failure for one group is logged and skipped so it can't
+// block the other tenants.
+func runBackupSchedules(ctx context.Context, app *app) {
+	now := time.Now()
+	due, err := app.repos.BackupSchedules.ListDue(ctx, now)
+	if err != nil {
+		log.Err(err).Msg("backup scheduler: failed to list due schedules")
+		return
+	}
+
+	for _, sched := range due {
+		gid := sched.GroupID
+		logger := log.With().Str("group_id", gid.String()).Str("schedule_id", sched.ID.String()).Logger()
+
+		if _, err := app.services.Exports.EnqueueScheduled(ctx, gid); err != nil {
+			logger.Err(err).Msg("backup scheduler: failed to enqueue scheduled export")
+			continue
+		}
+
+		next, err := services.NextRunAt(sched.Frequency, sched.TimeOfDay, now)
+		if err != nil {
+			logger.Err(err).Msg("backup scheduler: failed to compute next run")
+			continue
+		}
+		if err := app.repos.BackupSchedules.UpdateAfterRun(ctx, sched.ID, now, next); err != nil {
+			logger.Err(err).Msg("backup scheduler: failed to stamp run timestamps")
+			continue
+		}
+
+		// Prune backups accumulated by previous runs. The export just
+		// enqueued is still pending, so it is naturally excluded until it
+		// completes.
+		if err := app.services.Exports.PruneScheduledExports(ctx, gid, sched.Retention); err != nil {
+			logger.Err(err).Msg("backup scheduler: retention pruning failed")
+		}
+	}
 }

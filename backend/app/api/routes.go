@@ -155,6 +155,10 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Delete("/group/exports/{id}", chain.ToHandlerFunc(v1Ctrl.HandleExportDelete(), userMW...))
 		r.Post("/group/import", chain.ToHandlerFunc(v1Ctrl.HandleCollectionImport(), userMW...))
 
+		// Recurring backup schedule (group-scoped)
+		r.Get("/group/backup-schedule", chain.ToHandlerFunc(v1Ctrl.HandleBackupScheduleGet(), userMW...))
+		r.Put("/group/backup-schedule", chain.ToHandlerFunc(v1Ctrl.HandleBackupScheduleUpdate(), userMW...))
+
 		r.Get("/groups/statistics", chain.ToHandlerFunc(v1Ctrl.HandleGroupStatistics(), userMW...))
 		r.Get("/groups/statistics/purchase-price", chain.ToHandlerFunc(v1Ctrl.HandleGroupStatisticsPriceOverTime(), userMW...))
 		r.Get("/groups/statistics/locations", chain.ToHandlerFunc(v1Ctrl.HandleGroupStatisticsLocations(), userMW...))

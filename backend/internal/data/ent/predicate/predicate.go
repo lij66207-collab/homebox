@@ -18,6 +18,9 @@ type AuthRoles func(*sql.Selector)
 // AuthTokens is the predicate function for authtokens builders.
 type AuthTokens func(*sql.Selector)
 
+// BackupSchedule is the predicate function for backupschedule builders.
+type BackupSchedule func(*sql.Selector)
+
 // Entity is the predicate function for entity builders.
 type Entity func(*sql.Selector)
 

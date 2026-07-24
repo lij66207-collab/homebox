@@ -178,297 +178,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/admin/users": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "List all users (superuser only)",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/repo.UserOut"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Not a superuser",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Create a user (superuser only)",
-                "parameters": [
-                    {
-                        "description": "User Data",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.AdminUserCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/v1.Wrapped"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "item": {
-                                            "$ref": "#/definitions/repo.UserOut"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "403": {
-                        "description": "Not a superuser",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "409": {
-                        "description": "Email already in use",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/admin/users/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Delete a user (superuser only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Cannot delete own account via admin API",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Not a superuser",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/admin/users/{id}/disabled": {
-            "put": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Disable or re-enable a user account (superuser only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Disabled flag",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.AdminSetDisabledRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Cannot disable own account",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Not a superuser",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/admin/users/{id}/password": {
-            "put": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Set a user's password directly (superuser only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "New password",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.AdminSetPasswordRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Password too short",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "403": {
-                        "description": "Not a superuser",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/admin/users/{id}/reset-link": {
-            "post": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "Generate a one-time password reset link for a user (superuser only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/v1.Wrapped"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "item": {
-                                            "$ref": "#/definitions/v1.AdminResetLinkResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "403": {
-                        "description": "Not a superuser",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/assets/{id}": {
             "get": {
                 "security": [
@@ -1611,6 +1320,65 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/v1/group/backup-schedule": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Returns the caller group's recurring backup schedule. Groups that never configured one get the default (disabled) schedule instead of a 404.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Get the Backup Schedule",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repo.BackupScheduleOut"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Creates or replaces the caller group's recurring backup schedule and recomputes next_run_at. Disabled schedules get next_run_at cleared.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Group"
+                ],
+                "summary": "Upsert the Backup Schedule",
+                "parameters": [
+                    {
+                        "description": "Backup schedule",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.BackupScheduleUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repo.BackupScheduleOut"
+                        }
                     }
                 }
             }
@@ -3693,6 +3461,19 @@ const docTemplate = `{
                 "RoleAttachments"
             ]
         },
+        "backupschedule.Frequency": {
+            "type": "string",
+            "enum": [
+                "daily",
+                "daily",
+                "weekly"
+            ],
+            "x-enum-varnames": [
+                "DefaultFrequency",
+                "FrequencyDaily",
+                "FrequencyWeekly"
+            ]
+        },
         "currencies.Currency": {
             "type": "object",
             "properties": {
@@ -3932,6 +3713,76 @@ const docTemplate = `{
                 }
             }
         },
+        "ent.BackupSchedule": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "CreatedAt holds the value of the \"created_at\" field.",
+                    "type": "string"
+                },
+                "edges": {
+                    "description": "Edges holds the relations/edges for other nodes in the graph.\nThe values are being populated by the BackupScheduleQuery when eager-loading is set.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.BackupScheduleEdges"
+                        }
+                    ]
+                },
+                "enabled": {
+                    "description": "Enabled holds the value of the \"enabled\" field.",
+                    "type": "boolean"
+                },
+                "frequency": {
+                    "description": "Frequency holds the value of the \"frequency\" field.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/backupschedule.Frequency"
+                        }
+                    ]
+                },
+                "group_id": {
+                    "description": "GroupID holds the value of the \"group_id\" field.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID of the ent.",
+                    "type": "string"
+                },
+                "last_run_at": {
+                    "description": "LastRunAt holds the value of the \"last_run_at\" field.",
+                    "type": "string"
+                },
+                "next_run_at": {
+                    "description": "NextRunAt holds the value of the \"next_run_at\" field.",
+                    "type": "string"
+                },
+                "retention": {
+                    "description": "Retention holds the value of the \"retention\" field.",
+                    "type": "integer"
+                },
+                "time_of_day": {
+                    "description": "TimeOfDay holds the value of the \"time_of_day\" field.",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt holds the value of the \"updated_at\" field.",
+                    "type": "string"
+                }
+            }
+        },
+        "ent.BackupScheduleEdges": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "description": "Group holds the value of the group edge.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.Group"
+                        }
+                    ]
+                }
+            }
+        },
         "ent.Entity": {
             "type": "object",
             "properties": {
@@ -3974,14 +3825,6 @@ const docTemplate = `{
                 "lifetime_warranty": {
                     "description": "LifetimeWarranty holds the value of the \"lifetime_warranty\" field.",
                     "type": "boolean"
-                },
-                "low_stock_notified": {
-                    "description": "LowStockNotified holds the value of the \"low_stock_notified\" field.",
-                    "type": "boolean"
-                },
-                "low_stock_threshold": {
-                    "description": "LowStockThreshold holds the value of the \"low_stock_threshold\" field.",
-                    "type": "number"
                 },
                 "manufacturer": {
                     "description": "Manufacturer holds the value of the \"manufacturer\" field.",
@@ -4427,6 +4270,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "trigger": {
+                    "description": "Trigger holds the value of the \"trigger\" field.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/export.Trigger"
+                        }
+                    ]
+                },
                 "updated_at": {
                     "description": "UpdatedAt holds the value of the \"updated_at\" field.",
                     "type": "string"
@@ -4482,6 +4333,13 @@ const docTemplate = `{
         "ent.GroupEdges": {
             "type": "object",
             "properties": {
+                "backup_schedule": {
+                    "description": "BackupSchedule holds the value of the backup_schedule edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.BackupSchedule"
+                    }
+                },
                 "entities": {
                     "description": "Entities holds the value of the entities edge.",
                     "type": "array",
@@ -4942,10 +4800,6 @@ const docTemplate = `{
                     "description": "DefaultGroupID holds the value of the \"default_group_id\" field.",
                     "type": "string"
                 },
-                "disabled": {
-                    "description": "Disabled holds the value of the \"disabled\" field.",
-                    "type": "boolean"
-                },
                 "edges": {
                     "description": "Edges holds the relations/edges for other nodes in the graph.\nThe values are being populated by the UserQuery when eager-loading is set.",
                     "allOf": [
@@ -5110,14 +4964,12 @@ const docTemplate = `{
             "enum": [
                 "export",
                 "export",
-                "import",
-                "backup"
+                "import"
             ],
             "x-enum-varnames": [
                 "DefaultKind",
                 "KindExport",
-                "KindImport",
-                "KindBackup"
+                "KindImport"
             ]
         },
         "export.Status": {
@@ -5135,6 +4987,19 @@ const docTemplate = `{
                 "StatusRunning",
                 "StatusCompleted",
                 "StatusFailed"
+            ]
+        },
+        "export.Trigger": {
+            "type": "string",
+            "enum": [
+                "manual",
+                "manual",
+                "scheduled"
+            ],
+            "x-enum-varnames": [
+                "DefaultTrigger",
+                "TriggerManual",
+                "TriggerScheduled"
             ]
         },
         "repo.APIKeyCreate": {
@@ -5203,6 +5068,41 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "repo.BackupScheduleOut": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "frequency": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastRunAt": {
+                    "type": "string"
+                },
+                "nextRunAt": {
+                    "type": "string"
+                },
+                "retention": {
+                    "type": "integer"
+                },
+                "timeOfDay": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }
@@ -5421,15 +5321,6 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
-                "lowStockNotified": {
-                    "type": "boolean"
-                },
-                "lowStockThreshold": {
-                    "description": "Low stock",
-                    "type": "number",
-                    "x-nullable": true,
-                    "x-omitempty": true
-                },
                 "manufacturer": {
                     "type": "string"
                 },
@@ -5605,15 +5496,6 @@ const docTemplate = `{
                 "itemCount": {
                     "description": "Container-specific (populated when querying locations)",
                     "type": "number"
-                },
-                "lowStockNotified": {
-                    "type": "boolean"
-                },
-                "lowStockThreshold": {
-                    "description": "Low stock",
-                    "type": "number",
-                    "x-nullable": true,
-                    "x-omitempty": true
                 },
                 "name": {
                     "type": "string"
@@ -6032,12 +5914,6 @@ const docTemplate = `{
                     "description": "Warranty",
                     "type": "boolean"
                 },
-                "lowStockThreshold": {
-                    "description": "Low stock — nil clears the threshold",
-                    "type": "number",
-                    "x-nullable": true,
-                    "x-omitempty": true
-                },
                 "manufacturer": {
                     "type": "string"
                 },
@@ -6141,6 +6017,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "trigger": {
+                    "description": "Trigger is \"manual\" for user-initiated exports and \"scheduled\" for\nones produced by the group's backup schedule. Only scheduled exports\nare subject to the schedule's retention pruning.",
                     "type": "string"
                 },
                 "updatedAt": {
@@ -6687,9 +6567,6 @@ const docTemplate = `{
                 "defaultGroupId": {
                     "type": "string"
                 },
-                "disabled": {
-                    "type": "boolean"
-                },
                 "email": {
                     "type": "string"
                 },
@@ -6951,48 +6828,30 @@ const docTemplate = `{
                 }
             }
         },
-        "v1.AdminResetLinkResponse": {
+        "v1.BackupScheduleUpdateRequest": {
             "type": "object",
+            "required": [
+                "frequency",
+                "retention",
+                "timeOfDay"
+            ],
             "properties": {
-                "link": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.AdminSetDisabledRequest": {
-            "type": "object",
-            "properties": {
-                "disabled": {
+                "enabled": {
                     "type": "boolean"
-                }
-            }
-        },
-        "v1.AdminSetPasswordRequest": {
-            "type": "object",
-            "required": [
-                "password"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.AdminUserCreateRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
                 },
-                "name": {
-                    "type": "string"
+                "frequency": {
+                    "type": "string",
+                    "enum": [
+                        "daily",
+                        "weekly"
+                    ]
                 },
-                "password": {
+                "retention": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "timeOfDay": {
                     "type": "string"
                 }
             }

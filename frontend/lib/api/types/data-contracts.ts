@@ -35,6 +35,12 @@ export enum EntityPathType {
   EntityPathTypeItem = "item",
 }
 
+export enum ExportTrigger {
+  DefaultTrigger = "manual",
+  TriggerManual = "manual",
+  TriggerScheduled = "scheduled",
+}
+
 export enum ExportStatus {
   DefaultStatus = "pending",
   StatusPending = "pending",
@@ -47,7 +53,6 @@ export enum ExportKind {
   DefaultKind = "export",
   KindExport = "export",
   KindImport = "import",
-  KindBackup = "backup",
 }
 
 export enum EntityfieldType {
@@ -55,6 +60,12 @@ export enum EntityfieldType {
   TypeNumber = "number",
   TypeBoolean = "boolean",
   TypeTime = "time",
+}
+
+export enum BackupscheduleFrequency {
+  DefaultFrequency = "daily",
+  FrequencyDaily = "daily",
+  FrequencyWeekly = "weekly",
 }
 
 export enum AuthrolesRole {
@@ -182,6 +193,39 @@ export interface EntAuthTokensEdges {
   user: EntUser;
 }
 
+export interface EntBackupSchedule {
+  /** CreatedAt holds the value of the "created_at" field. */
+  created_at: string;
+  /**
+   * Edges holds the relations/edges for other nodes in the graph.
+   * The values are being populated by the BackupScheduleQuery when eager-loading is set.
+   */
+  edges: EntBackupScheduleEdges;
+  /** Enabled holds the value of the "enabled" field. */
+  enabled: boolean;
+  /** Frequency holds the value of the "frequency" field. */
+  frequency: BackupscheduleFrequency;
+  /** GroupID holds the value of the "group_id" field. */
+  group_id: string;
+  /** ID of the ent. */
+  id: string;
+  /** LastRunAt holds the value of the "last_run_at" field. */
+  last_run_at: string;
+  /** NextRunAt holds the value of the "next_run_at" field. */
+  next_run_at: string;
+  /** Retention holds the value of the "retention" field. */
+  retention: number;
+  /** TimeOfDay holds the value of the "time_of_day" field. */
+  time_of_day: string;
+  /** UpdatedAt holds the value of the "updated_at" field. */
+  updated_at: string;
+}
+
+export interface EntBackupScheduleEdges {
+  /** Group holds the value of the group edge. */
+  group: EntGroup;
+}
+
 export interface EntEntity {
   /** Archived holds the value of the "archived" field. */
   archived: boolean;
@@ -204,10 +248,6 @@ export interface EntEntity {
   insured: boolean;
   /** LifetimeWarranty holds the value of the "lifetime_warranty" field. */
   lifetime_warranty: boolean;
-  /** LowStockNotified holds the value of the "low_stock_notified" field. */
-  low_stock_notified: boolean;
-  /** LowStockThreshold holds the value of the "low_stock_threshold" field. */
-  low_stock_threshold: number;
   /** Manufacturer holds the value of the "manufacturer" field. */
   manufacturer: string;
   /** ModelNumber holds the value of the "model_number" field. */
@@ -404,6 +444,8 @@ export interface EntExport {
   size_bytes: number;
   /** Status holds the value of the "status" field. */
   status: ExportStatus;
+  /** Trigger holds the value of the "trigger" field. */
+  trigger: ExportTrigger;
   /** UpdatedAt holds the value of the "updated_at" field. */
   updated_at: string;
 }
@@ -432,6 +474,8 @@ export interface EntGroup {
 }
 
 export interface EntGroupEdges {
+  /** BackupSchedule holds the value of the backup_schedule edge. */
+  backup_schedule: EntBackupSchedule[];
   /** Entities holds the value of the entities edge. */
   entities: EntEntity[];
   /** EntityTemplates holds the value of the entity_templates edge. */
@@ -637,8 +681,6 @@ export interface EntUser {
   created_at: string;
   /** DefaultGroupID holds the value of the "default_group_id" field. */
   default_group_id: string;
-  /** Disabled holds the value of the "disabled" field. */
-  disabled: boolean;
   /**
    * Edges holds the relations/edges for other nodes in the graph.
    * The values are being populated by the UserQuery when eager-loading is set.
@@ -728,6 +770,19 @@ export interface APIKeyOut {
   userId: string;
 }
 
+export interface BackupScheduleOut {
+  createdAt: Date | string;
+  enabled: boolean;
+  frequency: string;
+  groupId: string;
+  id: string;
+  lastRunAt: string;
+  nextRunAt: string;
+  retention: number;
+  timeOfDay: string;
+  updatedAt: Date | string;
+}
+
 export interface BarcodeProduct {
   barcode: string;
   imageBase64: string;
@@ -813,9 +868,6 @@ export interface EntityOut {
    * items ultimately live in. Nil for top-level entities.
    */
   location?: EntitySummary | null;
-  lowStockNotified: boolean;
-  /** Low stock */
-  lowStockThreshold?: number | null;
   manufacturer: string;
   modelNumber: string;
   name: string;
@@ -869,9 +921,6 @@ export interface EntitySummary {
   insured: boolean;
   /** Container-specific (populated when querying locations) */
   itemCount: number;
-  lowStockNotified: boolean;
-  /** Low stock */
-  lowStockThreshold?: number | null;
   name: string;
   /** Edges */
   parent?: EntitySummary | null;
@@ -1028,8 +1077,6 @@ export interface EntityUpdate {
   insured: boolean;
   /** Warranty */
   lifetimeWarranty: boolean;
-  /** Low stock — nil clears the threshold */
-  lowStockThreshold?: number | null;
   manufacturer: string;
   modelNumber: string;
   /**
@@ -1076,6 +1123,12 @@ export interface ExportOut {
   progress: number;
   sizeBytes: number;
   status: string;
+  /**
+   * Trigger is "manual" for user-initiated exports and "scheduled" for
+   * ones produced by the group's backup schedule. Only scheduled exports
+   * are subject to the schedule's retention pruning.
+   */
+  trigger: string;
   updatedAt: Date | string;
 }
 
@@ -1292,7 +1345,6 @@ export interface TreeItem {
 
 export interface UserOut {
   defaultGroupId: string;
-  disabled: boolean;
   email: string;
   groupIds: string[];
   id: string;
@@ -1382,22 +1434,15 @@ export interface ActionAmountResult {
   completed: number;
 }
 
-export interface AdminResetLinkResponse {
-  link: string;
-}
-
-export interface AdminSetDisabledRequest {
-  disabled: boolean;
-}
-
-export interface AdminSetPasswordRequest {
-  password: string;
-}
-
-export interface AdminUserCreateRequest {
-  email: string;
-  name: string;
-  password: string;
+export interface BackupScheduleUpdateRequest {
+  enabled: boolean;
+  frequency: "daily" | "weekly";
+  /**
+   * @min 1
+   * @max 100
+   */
+  retention: number;
+  timeOfDay: string;
 }
 
 export interface Build {

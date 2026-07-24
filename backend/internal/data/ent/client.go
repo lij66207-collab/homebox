@@ -20,6 +20,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/authroles"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/authtokens"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/backupschedule"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityfield"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
@@ -49,6 +50,8 @@ type Client struct {
 	AuthRoles *AuthRolesClient
 	// AuthTokens is the client for interacting with the AuthTokens builders.
 	AuthTokens *AuthTokensClient
+	// BackupSchedule is the client for interacting with the BackupSchedule builders.
+	BackupSchedule *BackupScheduleClient
 	// Entity is the client for interacting with the Entity builders.
 	Entity *EntityClient
 	// EntityField is the client for interacting with the EntityField builders.
@@ -92,6 +95,7 @@ func (c *Client) init() {
 	c.Attachment = NewAttachmentClient(c.config)
 	c.AuthRoles = NewAuthRolesClient(c.config)
 	c.AuthTokens = NewAuthTokensClient(c.config)
+	c.BackupSchedule = NewBackupScheduleClient(c.config)
 	c.Entity = NewEntityClient(c.config)
 	c.EntityField = NewEntityFieldClient(c.config)
 	c.EntityTemplate = NewEntityTemplateClient(c.config)
@@ -202,6 +206,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Attachment:           NewAttachmentClient(cfg),
 		AuthRoles:            NewAuthRolesClient(cfg),
 		AuthTokens:           NewAuthTokensClient(cfg),
+		BackupSchedule:       NewBackupScheduleClient(cfg),
 		Entity:               NewEntityClient(cfg),
 		EntityField:          NewEntityFieldClient(cfg),
 		EntityTemplate:       NewEntityTemplateClient(cfg),
@@ -239,6 +244,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Attachment:           NewAttachmentClient(cfg),
 		AuthRoles:            NewAuthRolesClient(cfg),
 		AuthTokens:           NewAuthTokensClient(cfg),
+		BackupSchedule:       NewBackupScheduleClient(cfg),
 		Entity:               NewEntityClient(cfg),
 		EntityField:          NewEntityFieldClient(cfg),
 		EntityTemplate:       NewEntityTemplateClient(cfg),
@@ -282,10 +288,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.APIKey, c.Attachment, c.AuthRoles, c.AuthTokens, c.Entity, c.EntityField,
-		c.EntityTemplate, c.EntityType, c.Export, c.Group, c.GroupInvitationToken,
-		c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens, c.Tag, c.TemplateField,
-		c.User, c.UserGroup,
+		c.APIKey, c.Attachment, c.AuthRoles, c.AuthTokens, c.BackupSchedule, c.Entity,
+		c.EntityField, c.EntityTemplate, c.EntityType, c.Export, c.Group,
+		c.GroupInvitationToken, c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens,
+		c.Tag, c.TemplateField, c.User, c.UserGroup,
 	} {
 		n.Use(hooks...)
 	}
@@ -295,10 +301,10 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.APIKey, c.Attachment, c.AuthRoles, c.AuthTokens, c.Entity, c.EntityField,
-		c.EntityTemplate, c.EntityType, c.Export, c.Group, c.GroupInvitationToken,
-		c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens, c.Tag, c.TemplateField,
-		c.User, c.UserGroup,
+		c.APIKey, c.Attachment, c.AuthRoles, c.AuthTokens, c.BackupSchedule, c.Entity,
+		c.EntityField, c.EntityTemplate, c.EntityType, c.Export, c.Group,
+		c.GroupInvitationToken, c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens,
+		c.Tag, c.TemplateField, c.User, c.UserGroup,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -315,6 +321,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AuthRoles.mutate(ctx, m)
 	case *AuthTokensMutation:
 		return c.AuthTokens.mutate(ctx, m)
+	case *BackupScheduleMutation:
+		return c.BackupSchedule.mutate(ctx, m)
 	case *EntityMutation:
 		return c.Entity.mutate(ctx, m)
 	case *EntityFieldMutation:
@@ -973,6 +981,155 @@ func (c *AuthTokensClient) mutate(ctx context.Context, m *AuthTokensMutation) (V
 		return (&AuthTokensDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AuthTokens mutation op: %q", m.Op())
+	}
+}
+
+// BackupScheduleClient is a client for the BackupSchedule schema.
+type BackupScheduleClient struct {
+	config
+}
+
+// NewBackupScheduleClient returns a client for the BackupSchedule from the given config.
+func NewBackupScheduleClient(c config) *BackupScheduleClient {
+	return &BackupScheduleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `backupschedule.Hooks(f(g(h())))`.
+func (c *BackupScheduleClient) Use(hooks ...Hook) {
+	c.hooks.BackupSchedule = append(c.hooks.BackupSchedule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `backupschedule.Intercept(f(g(h())))`.
+func (c *BackupScheduleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BackupSchedule = append(c.inters.BackupSchedule, interceptors...)
+}
+
+// Create returns a builder for creating a BackupSchedule entity.
+func (c *BackupScheduleClient) Create() *BackupScheduleCreate {
+	mutation := newBackupScheduleMutation(c.config, OpCreate)
+	return &BackupScheduleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BackupSchedule entities.
+func (c *BackupScheduleClient) CreateBulk(builders ...*BackupScheduleCreate) *BackupScheduleCreateBulk {
+	return &BackupScheduleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BackupScheduleClient) MapCreateBulk(slice any, setFunc func(*BackupScheduleCreate, int)) *BackupScheduleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BackupScheduleCreateBulk{err: fmt.Errorf("calling to BackupScheduleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BackupScheduleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BackupScheduleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BackupSchedule.
+func (c *BackupScheduleClient) Update() *BackupScheduleUpdate {
+	mutation := newBackupScheduleMutation(c.config, OpUpdate)
+	return &BackupScheduleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BackupScheduleClient) UpdateOne(_m *BackupSchedule) *BackupScheduleUpdateOne {
+	mutation := newBackupScheduleMutation(c.config, OpUpdateOne, withBackupSchedule(_m))
+	return &BackupScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BackupScheduleClient) UpdateOneID(id uuid.UUID) *BackupScheduleUpdateOne {
+	mutation := newBackupScheduleMutation(c.config, OpUpdateOne, withBackupScheduleID(id))
+	return &BackupScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BackupSchedule.
+func (c *BackupScheduleClient) Delete() *BackupScheduleDelete {
+	mutation := newBackupScheduleMutation(c.config, OpDelete)
+	return &BackupScheduleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BackupScheduleClient) DeleteOne(_m *BackupSchedule) *BackupScheduleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BackupScheduleClient) DeleteOneID(id uuid.UUID) *BackupScheduleDeleteOne {
+	builder := c.Delete().Where(backupschedule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BackupScheduleDeleteOne{builder}
+}
+
+// Query returns a query builder for BackupSchedule.
+func (c *BackupScheduleClient) Query() *BackupScheduleQuery {
+	return &BackupScheduleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBackupSchedule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BackupSchedule entity by its id.
+func (c *BackupScheduleClient) Get(ctx context.Context, id uuid.UUID) (*BackupSchedule, error) {
+	return c.Query().Where(backupschedule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BackupScheduleClient) GetX(ctx context.Context, id uuid.UUID) *BackupSchedule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGroup queries the group edge of a BackupSchedule.
+func (c *BackupScheduleClient) QueryGroup(_m *BackupSchedule) *GroupQuery {
+	query := (&GroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(backupschedule.Table, backupschedule.FieldID, id),
+			sqlgraph.To(group.Table, group.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, backupschedule.GroupTable, backupschedule.GroupColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BackupScheduleClient) Hooks() []Hook {
+	return c.hooks.BackupSchedule
+}
+
+// Interceptors returns the client interceptors.
+func (c *BackupScheduleClient) Interceptors() []Interceptor {
+	return c.inters.BackupSchedule
+}
+
+func (c *BackupScheduleClient) mutate(ctx context.Context, m *BackupScheduleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BackupScheduleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BackupScheduleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BackupScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BackupScheduleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BackupSchedule mutation op: %q", m.Op())
 	}
 }
 
@@ -2126,6 +2283,22 @@ func (c *GroupClient) QueryExports(_m *Group) *ExportQuery {
 			sqlgraph.From(group.Table, group.FieldID, id),
 			sqlgraph.To(export.Table, export.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, group.ExportsTable, group.ExportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBackupSchedule queries the backup_schedule edge of a Group.
+func (c *GroupClient) QueryBackupSchedule(_m *Group) *BackupScheduleQuery {
+	query := (&BackupScheduleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(group.Table, group.FieldID, id),
+			sqlgraph.To(backupschedule.Table, backupschedule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, group.BackupScheduleTable, group.BackupScheduleColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3480,13 +3653,15 @@ func (c *UserGroupClient) mutate(ctx context.Context, m *UserGroupMutation) (Val
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		APIKey, Attachment, AuthRoles, AuthTokens, Entity, EntityField, EntityTemplate,
-		EntityType, Export, Group, GroupInvitationToken, MaintenanceEntry, Notifier,
-		PasswordResetTokens, Tag, TemplateField, User, UserGroup []ent.Hook
+		APIKey, Attachment, AuthRoles, AuthTokens, BackupSchedule, Entity, EntityField,
+		EntityTemplate, EntityType, Export, Group, GroupInvitationToken,
+		MaintenanceEntry, Notifier, PasswordResetTokens, Tag, TemplateField, User,
+		UserGroup []ent.Hook
 	}
 	inters struct {
-		APIKey, Attachment, AuthRoles, AuthTokens, Entity, EntityField, EntityTemplate,
-		EntityType, Export, Group, GroupInvitationToken, MaintenanceEntry, Notifier,
-		PasswordResetTokens, Tag, TemplateField, User, UserGroup []ent.Interceptor
+		APIKey, Attachment, AuthRoles, AuthTokens, BackupSchedule, Entity, EntityField,
+		EntityTemplate, EntityType, Export, Group, GroupInvitationToken,
+		MaintenanceEntry, Notifier, PasswordResetTokens, Tag, TemplateField, User,
+		UserGroup []ent.Interceptor
 	}
 )

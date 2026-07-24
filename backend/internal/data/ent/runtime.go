@@ -9,6 +9,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/apikey"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/authtokens"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/backupschedule"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityfield"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
@@ -126,6 +127,37 @@ func init() {
 	authtokensDescID := authtokensMixinFields0[0].Descriptor()
 	// authtokens.DefaultID holds the default value on creation for the id field.
 	authtokens.DefaultID = authtokensDescID.Default.(func() uuid.UUID)
+	backupscheduleMixin := schema.BackupSchedule{}.Mixin()
+	backupscheduleMixinFields0 := backupscheduleMixin[0].Fields()
+	_ = backupscheduleMixinFields0
+	backupscheduleFields := schema.BackupSchedule{}.Fields()
+	_ = backupscheduleFields
+	// backupscheduleDescCreatedAt is the schema descriptor for created_at field.
+	backupscheduleDescCreatedAt := backupscheduleMixinFields0[1].Descriptor()
+	// backupschedule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	backupschedule.DefaultCreatedAt = backupscheduleDescCreatedAt.Default.(func() time.Time)
+	// backupscheduleDescUpdatedAt is the schema descriptor for updated_at field.
+	backupscheduleDescUpdatedAt := backupscheduleMixinFields0[2].Descriptor()
+	// backupschedule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	backupschedule.DefaultUpdatedAt = backupscheduleDescUpdatedAt.Default.(func() time.Time)
+	// backupschedule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	backupschedule.UpdateDefaultUpdatedAt = backupscheduleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// backupscheduleDescEnabled is the schema descriptor for enabled field.
+	backupscheduleDescEnabled := backupscheduleFields[0].Descriptor()
+	// backupschedule.DefaultEnabled holds the default value on creation for the enabled field.
+	backupschedule.DefaultEnabled = backupscheduleDescEnabled.Default.(bool)
+	// backupscheduleDescTimeOfDay is the schema descriptor for time_of_day field.
+	backupscheduleDescTimeOfDay := backupscheduleFields[2].Descriptor()
+	// backupschedule.DefaultTimeOfDay holds the default value on creation for the time_of_day field.
+	backupschedule.DefaultTimeOfDay = backupscheduleDescTimeOfDay.Default.(string)
+	// backupscheduleDescRetention is the schema descriptor for retention field.
+	backupscheduleDescRetention := backupscheduleFields[3].Descriptor()
+	// backupschedule.DefaultRetention holds the default value on creation for the retention field.
+	backupschedule.DefaultRetention = backupscheduleDescRetention.Default.(int)
+	// backupscheduleDescID is the schema descriptor for id field.
+	backupscheduleDescID := backupscheduleMixinFields0[0].Descriptor()
+	// backupschedule.DefaultID holds the default value on creation for the id field.
+	backupschedule.DefaultID = backupscheduleDescID.Default.(func() uuid.UUID)
 	entityMixin := schema.Entity{}.Mixin()
 	entityMixinFields0 := entityMixin[0].Fields()
 	_ = entityMixinFields0
@@ -454,7 +486,7 @@ func init() {
 	// export.DefaultSizeBytes holds the default value on creation for the size_bytes field.
 	export.DefaultSizeBytes = exportDescSizeBytes.Default.(int64)
 	// exportDescError is the schema descriptor for error field.
-	exportDescError := exportFields[5].Descriptor()
+	exportDescError := exportFields[6].Descriptor()
 	// export.ErrorValidator is a validator for the "error" field. It is called by the builders before save.
 	export.ErrorValidator = exportDescError.Validators[0].(func(string) error)
 	// exportDescID is the schema descriptor for id field.
