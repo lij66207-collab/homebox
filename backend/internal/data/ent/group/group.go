@@ -23,6 +23,8 @@ const (
 	FieldName = "name"
 	// FieldCurrency holds the string denoting the currency field in the database.
 	FieldCurrency = "currency"
+	// FieldSettings holds the string denoting the settings field in the database.
+	FieldSettings = "settings"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
 	// EdgeEntityTypes holds the string denoting the entity_types edge name in mutations.
@@ -122,6 +124,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldName,
 	FieldCurrency,
+	FieldSettings,
 }
 
 var (

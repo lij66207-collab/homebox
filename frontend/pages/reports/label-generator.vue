@@ -404,174 +404,176 @@
 </script>
 
 <template>
-  <div class="print:hidden">
-    <Toaster />
-    <div class="container prose mx-auto max-w-4xl p-4 pt-6">
-      <h1>LJJ Organizer {{ $t("reports.label_generator.title") }}</h1>
-      <p>
-        {{ $t("reports.label_generator.instruction_1") }}
-      </p>
-      <p>
-        {{ $t("reports.label_generator.instruction_2") }}
-      </p>
-      <p v-html="DOMPurify.sanitize($t('reports.label_generator.instruction_3'))" />
-      <h2>{{ $t("reports.label_generator.tips") }}</h2>
-      <ul>
-        <li v-html="DOMPurify.sanitize($t('reports.label_generator.tip_1'))" />
-        <li v-html="DOMPurify.sanitize($t('reports.label_generator.tip_2'))" />
-        <li v-html="DOMPurify.sanitize($t('reports.label_generator.tip_3'))" />
-      </ul>
-      <div class="flex flex-wrap gap-2">
-        <NuxtLink href="/collection/tools">{{ $t("collection.tabs.tools") }}</NuxtLink>
-        <NuxtLink href="/home">{{ $t("menu.home") }}</NuxtLink>
+  <div>
+    <div class="print:hidden">
+      <Toaster />
+      <div class="container prose mx-auto max-w-4xl p-4 pt-6">
+        <h1>LJJ Organizer {{ $t("reports.label_generator.title") }}</h1>
+        <p>
+          {{ $t("reports.label_generator.instruction_1") }}
+        </p>
+        <p>
+          {{ $t("reports.label_generator.instruction_2") }}
+        </p>
+        <p v-html="DOMPurify.sanitize($t('reports.label_generator.instruction_3'))" />
+        <h2>{{ $t("reports.label_generator.tips") }}</h2>
+        <ul>
+          <li v-html="DOMPurify.sanitize($t('reports.label_generator.tip_1'))" />
+          <li v-html="DOMPurify.sanitize($t('reports.label_generator.tip_2'))" />
+          <li v-html="DOMPurify.sanitize($t('reports.label_generator.tip_3'))" />
+        </ul>
+        <div class="flex flex-wrap gap-2">
+          <NuxtLink href="/collection/tools">{{ $t("collection.tabs.tools") }}</NuxtLink>
+          <NuxtLink href="/home">{{ $t("menu.home") }}</NuxtLink>
+        </div>
       </div>
-    </div>
-    <Separator class="mx-auto max-w-4xl" />
-    <div class="container mx-auto max-w-4xl p-4">
-      <div class="rounded-2xl border bg-card p-6 shadow-card">
-        <div class="mx-auto grid grid-cols-2 gap-3">
-          <div v-for="(prop, i) in propertyInputs" :key="i" class="flex w-full max-w-xs flex-col">
-            <Label :for="`input-${prop.ref}`">
-              {{ prop.label }}
-            </Label>
-            <Input
-              :id="`input-${prop.ref}`"
-              v-model="displayProperties[prop.ref]"
-              :type="prop.type ? prop.type : 'number'"
-              :min="prop.min"
-              :max="prop.ref === 'skipLabels' ? Math.max(0, out.rows * out.cols - 1) : undefined"
-              :step="prop.type === 'text' ? undefined : (prop.step ?? 0.01)"
-              :placeholder="$t('reports.label_generator.input_placeholder')"
-              class="w-full max-w-xs"
-            />
+      <Separator class="mx-auto max-w-4xl" />
+      <div class="container mx-auto max-w-4xl p-4">
+        <div class="rounded-2xl border bg-card p-6 shadow-card">
+          <div class="mx-auto grid grid-cols-2 gap-3">
+            <div v-for="(prop, i) in propertyInputs" :key="i" class="flex w-full max-w-xs flex-col">
+              <Label :for="`input-${prop.ref}`">
+                {{ prop.label }}
+              </Label>
+              <Input
+                :id="`input-${prop.ref}`"
+                v-model="displayProperties[prop.ref]"
+                :type="prop.type ? prop.type : 'number'"
+                :min="prop.min"
+                :max="prop.ref === 'skipLabels' ? Math.max(0, out.rows * out.cols - 1) : undefined"
+                :step="prop.type === 'text' ? undefined : (prop.step ?? 0.01)"
+                :placeholder="$t('reports.label_generator.input_placeholder')"
+                class="w-full max-w-xs"
+              />
+            </div>
+            <div class="flex w-full max-w-xs flex-col">
+              <Label for="select-replaceHomeboxBehavior">
+                {{ $t("reports.label_generator.replace_homebox_behavior") }}
+              </Label>
+              <Select id="select-replaceHomeboxBehavior" v-model="replaceHomeboxBehavior" class="w-full max-w-xs">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem :value="BEHAVIOR_SHOW">
+                    {{ $t("reports.label_generator.replace_homebox_behavior_show_homebox") }}
+                  </SelectItem>
+                  <SelectItem :value="BEHAVIOR_ITEM_NO_NAME_NO_LOCATION">
+                    {{ $t("reports.label_generator.replace_homebox_behavior_item_no_name_no_location") }}
+                  </SelectItem>
+                  <SelectItem :value="BEHAVIOR_ITEM_NO_NAME">
+                    {{ $t("reports.label_generator.replace_homebox_behavior_item_no_name") }}
+                  </SelectItem>
+                  <SelectItem :value="BEHAVIOR_ITEM_NO_LOCATION">
+                    {{ $t("reports.label_generator.replace_homebox_behavior_item_no_location") }}
+                  </SelectItem>
+                  <SelectItem :value="BEHAVIOR_ALWAYS_REPLACE">
+                    {{ $t("reports.label_generator.replace_homebox_behavior_always_replace") }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div v-if="replaceHomeboxBehavior !== BEHAVIOR_SHOW" class="flex w-full max-w-xs flex-col">
+              <Label for="input-replaceHomeboxText">
+                {{ $t("reports.label_generator.replace_homebox_text") }}
+              </Label>
+              <Input
+                id="input-replaceHomeboxText"
+                v-model="replaceHomeboxText"
+                type="text"
+                :placeholder="$t('reports.label_generator.input_placeholder')"
+                class="w-full max-w-xs"
+              />
+            </div>
           </div>
-          <div class="flex w-full max-w-xs flex-col">
-            <Label for="select-replaceHomeboxBehavior">
-              {{ $t("reports.label_generator.replace_homebox_behavior") }}
-            </Label>
-            <Select id="select-replaceHomeboxBehavior" v-model="replaceHomeboxBehavior" class="w-full max-w-xs">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem :value="BEHAVIOR_SHOW">
-                  {{ $t("reports.label_generator.replace_homebox_behavior_show_homebox") }}
-                </SelectItem>
-                <SelectItem :value="BEHAVIOR_ITEM_NO_NAME_NO_LOCATION">
-                  {{ $t("reports.label_generator.replace_homebox_behavior_item_no_name_no_location") }}
-                </SelectItem>
-                <SelectItem :value="BEHAVIOR_ITEM_NO_NAME">
-                  {{ $t("reports.label_generator.replace_homebox_behavior_item_no_name") }}
-                </SelectItem>
-                <SelectItem :value="BEHAVIOR_ITEM_NO_LOCATION">
-                  {{ $t("reports.label_generator.replace_homebox_behavior_item_no_location") }}
-                </SelectItem>
-                <SelectItem :value="BEHAVIOR_ALWAYS_REPLACE">
-                  {{ $t("reports.label_generator.replace_homebox_behavior_always_replace") }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div class="max-w-xs">
+            <div class="flex items-center gap-2 py-4">
+              <Checkbox id="borderedLabels" v-model="bordered" />
+              <Label class="cursor-pointer" for="borderedLabels">
+                {{ $t("reports.label_generator.bordered_labels") }}
+              </Label>
+            </div>
+            <div class="flex items-center gap-2 py-4">
+              <Checkbox id="printLocationRow" v-model="printLocationRow" />
+              <Label class="cursor-pointer" for="printLocationRow">
+                {{ $t("reports.label_generator.print_location_row") }}
+              </Label>
+            </div>
           </div>
-          <div v-if="replaceHomeboxBehavior !== BEHAVIOR_SHOW" class="flex w-full max-w-xs flex-col">
-            <Label for="input-replaceHomeboxText">
-              {{ $t("reports.label_generator.replace_homebox_text") }}
-            </Label>
-            <Input
-              id="input-replaceHomeboxText"
-              v-model="replaceHomeboxText"
-              type="text"
-              :placeholder="$t('reports.label_generator.input_placeholder')"
-              class="w-full max-w-xs"
-            />
-          </div>
-        </div>
-        <div class="max-w-xs">
-          <div class="flex items-center gap-2 py-4">
-            <Checkbox id="borderedLabels" v-model="bordered" />
-            <Label class="cursor-pointer" for="borderedLabels">
-              {{ $t("reports.label_generator.bordered_labels") }}
-            </Label>
-          </div>
-          <div class="flex items-center gap-2 py-4">
-            <Checkbox id="printLocationRow" v-model="printLocationRow" />
-            <Label class="cursor-pointer" for="printLocationRow">
-              {{ $t("reports.label_generator.print_location_row") }}
-            </Label>
-          </div>
-        </div>
 
-        <div>
-          <p>{{ $t("reports.label_generator.qr_code_example") }} {{ displayProperties.baseURL }}/a/{asset_id}</p>
-          <Button size="lg" class="my-4 w-full" @click="calcPages">
-            {{ $t("reports.label_generator.generate_page") }}
-          </Button>
+          <div>
+            <p>{{ $t("reports.label_generator.qr_code_example") }} {{ displayProperties.baseURL }}/a/{asset_id}</p>
+            <Button size="lg" class="my-4 w-full" @click="calcPages">
+              {{ $t("reports.label_generator.generate_page") }}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="flex flex-col items-center">
-    <section
-      v-for="(page, pi) in pages"
-      :key="pi"
-      class="border-2 shadow-card print:border-none print:shadow-none"
-      :style="{
-        paddingTop: `${out.page.pt}${out.measure}`,
-        paddingBottom: `${out.page.pb}${out.measure}`,
-        paddingLeft: `${out.page.pl}${out.measure}`,
-        paddingRight: `${out.page.pr}${out.measure}`,
-        width: `${out.page.width}${out.measure}`,
-        background: `white`,
-        color: `black`,
-      }"
-    >
-      <div
-        v-for="(row, ri) in page.rows"
-        :key="ri"
-        class="flex break-inside-avoid"
+    <div class="flex flex-col items-center">
+      <section
+        v-for="(page, pi) in pages"
+        :key="pi"
+        class="border-2 shadow-card print:border-none print:shadow-none"
         :style="{
-          columnGap: `${out.gapX}${out.measure}`,
-          rowGap: `${out.gapY}${out.measure}`,
+          paddingTop: `${out.page.pt}${out.measure}`,
+          paddingBottom: `${out.page.pb}${out.measure}`,
+          paddingLeft: `${out.page.pl}${out.measure}`,
+          paddingRight: `${out.page.pr}${out.measure}`,
+          width: `${out.page.width}${out.measure}`,
+          background: `white`,
+          color: `black`,
         }"
       >
         <div
-          v-for="(item, idx) in row.items"
-          :key="idx"
-          class="flex border-2"
-          :class="{
-            'border-black': bordered && !!item,
-            'border-transparent': !bordered || !item,
-          }"
+          v-for="(row, ri) in page.rows"
+          :key="ri"
+          class="flex break-inside-avoid"
           :style="{
-            height: `${out.card.height}${out.measure}`,
-            width: `${out.card.width}${out.measure}`,
+            columnGap: `${out.gapX}${out.measure}`,
+            rowGap: `${out.gapY}${out.measure}`,
           }"
         >
-          <template v-if="item">
-            <div class="flex items-center">
-              <img
-                :src="item.url"
-                :style="{
-                  minWidth: `${out.card.height * 0.9}${out.measure}`,
-                  width: `${out.card.height * 0.9}${out.measure}`,
-                  height: `${out.card.height * 0.9}${out.measure}`,
-                }"
-              />
-            </div>
-            <div class="ml-2 flex flex-col justify-center">
-              <div class="font-bold">{{ item.assetID }}</div>
-              <div
-                v-if="getHomeBoxLineText(item)"
-                class="text-xs"
-                :class="{ 'font-light italic': getHomeBoxLineText(item) !== labelBlankLine }"
-              >
-                {{ getHomeBoxLineText(item) }}
+          <div
+            v-for="(item, idx) in row.items"
+            :key="idx"
+            class="flex border-2"
+            :class="{
+              'border-black': bordered && !!item,
+              'border-transparent': !bordered || !item,
+            }"
+            :style="{
+              height: `${out.card.height}${out.measure}`,
+              width: `${out.card.width}${out.measure}`,
+            }"
+          >
+            <template v-if="item">
+              <div class="flex items-center">
+                <img
+                  :src="item.url"
+                  :style="{
+                    minWidth: `${out.card.height * 0.9}${out.measure}`,
+                    width: `${out.card.height * 0.9}${out.measure}`,
+                    height: `${out.card.height * 0.9}${out.measure}`,
+                  }"
+                />
               </div>
-              <div class="overflow-hidden text-wrap text-xs">{{ item.name }}</div>
-              <div v-if="printLocationRow" class="text-xs">{{ item.location }}</div>
-            </div>
-          </template>
+              <div class="ml-2 flex flex-col justify-center">
+                <div class="font-bold">{{ item.assetID }}</div>
+                <div
+                  v-if="getHomeBoxLineText(item)"
+                  class="text-xs"
+                  :class="{ 'font-light italic': getHomeBoxLineText(item) !== labelBlankLine }"
+                >
+                  {{ getHomeBoxLineText(item) }}
+                </div>
+                <div class="overflow-hidden text-wrap text-xs">{{ item.name }}</div>
+                <div v-if="printLocationRow" class="text-xs">{{ item.location }}</div>
+              </div>
+            </template>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </template>

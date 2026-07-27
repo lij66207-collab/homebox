@@ -2,17 +2,21 @@ package v1
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/hay-kot/httpkit/errchain"
+	"github.com/hay-kot/httpkit/server"
+	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 	"github.com/sysadminsmedia/homebox/backend/internal/core/services"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/validate"
 	"github.com/sysadminsmedia/homebox/backend/internal/web/adapters"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type (
@@ -310,4 +314,119 @@ func (ctrl *V1Controller) HandleGroupInvitationsAccept() errchain.HandlerFunc {
 	}
 
 	return adapters.Command(fn, http.StatusOK)
+}
+
+// HandleGroupSettingsGet godoc
+//
+//	@Summary	Get group settings
+//	@Tags		Group
+//	@Produce	json
+//	@Success	200	{object}	Wrapped{item=map[string]interface{}}
+//	@Router		/v1/group/settings [GET]
+//	@Security	Bearer
+func (ctrl *V1Controller) HandleGroupSettingsGet() errchain.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		spanCtx, span := startEntityCtrlSpan(r.Context(), "controller.V1.HandleGroupSettingsGet")
+		defer span.End()
+
+		auth := services.NewContext(spanCtx)
+		settings, err := ctrl.svc.Group.GetSettings(auth)
+		if err != nil {
+			recordCtrlSpanError(span, err)
+			return validate.NewRequestError(err, http.StatusInternalServerError)
+		}
+		span.SetAttributes(attribute.Int("settings.keys.count", len(settings)))
+
+		w.Header().Set("Cache-Control", "no-store")
+		return server.JSON(w, http.StatusOK, Wrap(services.RedactGroupSettings(settings)))
+	}
+}
+
+// HandleGroupSettingsUpdate godoc
+//
+//	@Summary	Update group settings
+//	@Tags		Group
+//	@Produce	json
+//	@Success	200	{object}	Wrapped{item=map[string]interface{}}
+//	@Router		/v1/group/settings [PUT]
+//	@Param		payload	body	map[string]interface{}	true	"Settings Data"
+//	@Security	Bearer
+func (ctrl *V1Controller) HandleGroupSettingsUpdate() errchain.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		spanCtx, span := startEntityCtrlSpan(r.Context(), "controller.V1.HandleGroupSettingsUpdate")
+		defer span.End()
+
+		r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
+		var settings map[string]interface{}
+		if err := server.Decode(r, &settings); err != nil {
+			recordCtrlSpanError(span, err)
+			span.SetAttributes(attribute.String("settings.outcome", "decode_failed"))
+			log.Err(err).Msg("failed to decode group settings data")
+			return validate.NewRequestError(err, http.StatusBadRequest)
+		}
+		span.SetAttributes(attribute.Int("settings.keys.count", len(settings)))
+
+		auth := services.NewContext(spanCtx)
+		updated, err := ctrl.svc.Group.SetSettings(auth, settings)
+		if err != nil {
+			recordCtrlSpanError(span, err)
+			span.SetAttributes(attribute.String("settings.outcome", "set_failed"))
+			return validate.NewRequestError(err, http.StatusInternalServerError)
+		}
+		span.SetAttributes(attribute.String("settings.outcome", "success"))
+
+		w.Header().Set("Cache-Control", "no-store")
+		return server.JSON(w, http.StatusOK, Wrap(services.RedactGroupSettings(updated)))
+	}
+}
+
+// GroupTestServerChanRequest is the payload for the Server酱 test endpoint.
+// SendKey is optional; when empty (or the redaction sentinel echoed back by
+// the UI) the group's stored sendkey is used.
+type GroupTestServerChanRequest struct {
+	SendKey string `json:"sendkey"`
+}
+
+// HandleGroupTestServerChan godoc
+//
+//	@Summary	Send a Server酱 test push
+//	@Tags		Group
+//	@Produce	json
+//	@Param		payload	body		GroupTestServerChanRequest	false	"Test payload; empty sendkey uses the stored one"
+//	@Success	200		{object}	Wrapped{item=string}
+//	@Router		/v1/group/settings/test-serverchan [Post]
+//	@Security	Bearer
+func (ctrl *V1Controller) HandleGroupTestServerChan() errchain.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		r.Body = http.MaxBytesReader(w, r.Body, 4*1024)
+
+		// The body is optional; an empty one means "use the stored sendkey".
+		var body GroupTestServerChanRequest
+		if err := server.Decode(r, &body); err != nil && !errors.Is(err, io.EOF) {
+			return validate.NewRequestError(err, http.StatusBadRequest)
+		}
+
+		auth := services.NewContext(r.Context())
+		sendKey := body.SendKey
+		if sendKey == "" || sendKey == services.RedactedSettingsValue {
+			stored, err := ctrl.svc.Group.GetServerChanSendKey(auth)
+			if err != nil {
+				return validate.NewRequestError(err, http.StatusInternalServerError)
+			}
+			sendKey = stored
+		}
+		if sendKey == "" {
+			return validate.NewRequestError(errors.New("no serverchan sendkey provided or stored"), http.StatusBadRequest)
+		}
+
+		err := services.SendServerChan(r.Context(), sendKey, "Homebox 测试消息", "这是一条来自 Homebox 的 Server酱 测试推送，说明 SendKey 配置正确。")
+		if err != nil {
+			// Log the failure without the sendkey; the API error message is
+			// safe to return to the caller.
+			log.Err(err).Msg("serverchan test push failed")
+			return validate.NewRequestError(err, http.StatusBadGateway)
+		}
+
+		return server.JSON(w, http.StatusOK, Wrap("ok"))
+	}
 }

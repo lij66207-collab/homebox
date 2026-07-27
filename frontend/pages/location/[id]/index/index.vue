@@ -48,16 +48,20 @@
 
   const locationId = computed<string>(() => route.params.id as string);
 
-  const { data: location } = useAsyncData(locationId.value, async () => {
-    const { data, error } = await api.items.getLocation(locationId.value);
-    if (error) {
-      toast.error(t("locations.toast.failed_load_location"));
-      navigateTo("/home");
-      return;
-    }
+  const { data: location } = useAsyncData(
+    locationId.value,
+    async () => {
+      const { data, error } = await api.items.getLocation(locationId.value);
+      if (error) {
+        toast.error(t("locations.toast.failed_load_location"));
+        navigateTo("/home");
+        return;
+      }
 
-    return data;
-  });
+      return data;
+    },
+    { watch: [locationId] }
+  );
 
   const confirm = useConfirm();
 

@@ -138,6 +138,9 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Get("/groups", chain.ToHandlerFunc(v1Ctrl.HandleGroupGet(), userMW...))
 		r.Put("/groups", chain.ToHandlerFunc(v1Ctrl.HandleGroupUpdate(), userMW...))
 		r.Delete("/groups", chain.ToHandlerFunc(v1Ctrl.HandleGroupDelete(), userMW...))
+		r.Get("/group/settings", chain.ToHandlerFunc(v1Ctrl.HandleGroupSettingsGet(), userMW...))
+		r.Put("/group/settings", chain.ToHandlerFunc(v1Ctrl.HandleGroupSettingsUpdate(), userMW...))
+		r.Post("/group/settings/test-serverchan", chain.ToHandlerFunc(v1Ctrl.HandleGroupTestServerChan(), userMW...))
 
 		r.Get("/groups/members", chain.ToHandlerFunc(v1Ctrl.HandleGroupMembersGetAll(), userMW...))
 		r.Delete("/groups/members/{user_id}", chain.ToHandlerFunc(v1Ctrl.HandleGroupMemberRemove(), userMW...))
@@ -192,6 +195,9 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Post("/entities/ai-suggest", chain.ToHandlerFunc(v1Ctrl.HandleEntityAISuggest(), userMW...))
 		r.Post("/entities/ai-batch-parse", chain.ToHandlerFunc(v1Ctrl.HandleEntityAIBatchParse(), userMW...))
 		r.Post("/entities/ai-search", chain.ToHandlerFunc(v1Ctrl.HandleEntityAISearch(), userMW...))
+
+		// AI voice assistant
+		r.Post("/assistant/voice", chain.ToHandlerFunc(v1Ctrl.HandleAssistantVoice(), userMW...))
 		r.Get("/entities/export", chain.ToHandlerFunc(v1Ctrl.HandleEntitiesExport(), userMW...))
 		r.Get("/entities/fields", chain.ToHandlerFunc(v1Ctrl.HandleGetAllCustomFieldNames(), userMW...))
 		r.Get("/entities/fields/values", chain.ToHandlerFunc(v1Ctrl.HandleGetAllCustomFieldValues(), userMW...))

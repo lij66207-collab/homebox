@@ -53,6 +53,119 @@ func (svc *GroupService) DeleteGroup(ctx Context) error {
 	return svc.repos.Groups.GroupDelete(ctx.Context, ctx.GID)
 }
 
+// RedactedSettingsValue is the sentinel substituted for sensitive group
+// settings values in API responses. It must not match any plausible real
+// value; clients echo it back on update to signal "keep the stored value".
+const RedactedSettingsValue = "REDACTED"
+
+// Namespaces and keys of the group settings document.
+const (
+	settingsNamespaceAssistant      = "assistant"
+	settingsNamespaceExpiryReminder = "expiry_reminder"
+	settingsKeyAssistantEnabled     = "enabled"
+	settingsKeySTTBaseURL           = "stt_base_url"
+	settingsKeySTTAPIKey            = "stt_api_key"
+	settingsKeySTTModel             = "stt_model"
+	settingsKeySendkey              = "sendkey"
+)
+
+// sensitiveGroupSettingsKeys are the namespaced keys inside the group
+// settings document whose values are secrets. They are redacted on read and
+// preserved on write when the client echoes back the redaction sentinel.
+var sensitiveGroupSettingsKeys = []struct {
+	namespace string
+	key       string
+}{
+	{settingsNamespaceAssistant, settingsKeySTTAPIKey},
+	{settingsNamespaceExpiryReminder, settingsKeySendkey},
+}
+
+// RedactGroupSettings returns a copy of settings with every sensitive value
+// replaced by RedactedSettingsValue. Empty/absent values stay as-is so
+// clients can distinguish "not configured" from "configured".
+func RedactGroupSettings(settings map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(settings))
+	for k, v := range settings {
+		out[k] = v
+	}
+
+	for _, sk := range sensitiveGroupSettingsKeys {
+		ns, ok := out[sk.namespace].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if v, ok := ns[sk.key].(string); ok && v != "" {
+			// Copy the nested map so the caller's settings are not mutated.
+			redacted := make(map[string]interface{}, len(ns))
+			for k, v := range ns {
+				redacted[k] = v
+			}
+			redacted[sk.key] = RedactedSettingsValue
+			out[sk.namespace] = redacted
+		}
+	}
+
+	return out
+}
+
+// GetSettings returns the group's raw settings document, including secrets.
+// API handlers must pass the result through RedactGroupSettings.
+func (svc *GroupService) GetSettings(ctx Context) (map[string]interface{}, error) {
+	return svc.repos.Groups.GetSettings(ctx.Context, ctx.GID)
+}
+
+// GetServerChanSendKey returns the group's stored Server酱 sendkey, or ""
+// when none is configured.
+func (svc *GroupService) GetServerChanSendKey(ctx Context) (string, error) {
+	settings, err := svc.GetSettings(ctx)
+	if err != nil {
+		return "", err
+	}
+	ns, ok := settings[settingsNamespaceExpiryReminder].(map[string]interface{})
+	if !ok {
+		return "", nil
+	}
+	sendKey, _ := ns[settingsKeySendkey].(string)
+	return sendKey, nil
+}
+
+// SetSettings replaces the group's settings document wholesale. Sensitive
+// keys submitted as RedactedSettingsValue or an empty string keep their
+// currently stored value; every other key is stored as submitted.
+func (svc *GroupService) SetSettings(ctx Context, settings map[string]interface{}) (map[string]interface{}, error) {
+	current, err := svc.repos.Groups.GetSettings(ctx.Context, ctx.GID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sk := range sensitiveGroupSettingsKeys {
+		ns, ok := settings[sk.namespace].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		v, ok := ns[sk.key].(string)
+		if !ok || (v != "" && v != RedactedSettingsValue) {
+			continue
+		}
+
+		stored := ""
+		if curNS, ok := current[sk.namespace].(map[string]interface{}); ok {
+			stored, _ = curNS[sk.key].(string)
+		}
+		if stored != "" {
+			ns[sk.key] = stored
+		} else {
+			delete(ns, sk.key)
+		}
+	}
+
+	if err := svc.repos.Groups.UpdateSettings(ctx.Context, ctx.GID, settings); err != nil {
+		return nil, err
+	}
+
+	return settings, nil
+}
+
 func (svc *GroupService) NewInvitation(ctx Context, uses int, expiresAt time.Time) (repo.GroupInvitation, string, error) {
 	token := hasher.GenerateToken()
 

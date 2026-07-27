@@ -36,6 +36,7 @@ func NewGroupRepository(db *ent.Client) *GroupRepository {
 			CreatedAt: g.CreatedAt,
 			UpdatedAt: g.UpdatedAt,
 			Currency:  strings.ToUpper(g.Currency),
+			Settings:  g.Settings,
 		}
 	}
 
@@ -57,11 +58,12 @@ func NewGroupRepository(db *ent.Client) *GroupRepository {
 
 type (
 	Group struct {
-		ID        uuid.UUID `json:"id,omitempty"`
-		Name      string    `json:"name,omitempty"`
-		CreatedAt time.Time `json:"createdAt,omitempty"`
-		UpdatedAt time.Time `json:"updatedAt,omitempty"`
-		Currency  string    `json:"currency,omitempty"`
+		ID        uuid.UUID              `json:"id,omitempty"`
+		Name      string                 `json:"name,omitempty"`
+		CreatedAt time.Time              `json:"createdAt,omitempty"`
+		UpdatedAt time.Time              `json:"updatedAt,omitempty"`
+		Currency  string                 `json:"currency,omitempty"`
+		Settings  map[string]interface{} `json:"settings,omitempty"`
 	}
 
 	GroupUpdate struct {
@@ -322,6 +324,24 @@ func (r *GroupRepository) GroupUpdate(ctx context.Context, id uuid.UUID, data Gr
 
 func (r *GroupRepository) GroupByID(ctx context.Context, id uuid.UUID) (Group, error) {
 	return r.groupMapper.MapErr(r.db.Group.Get(ctx, id))
+}
+
+// GetSettings returns the group's free-form JSON settings. A group that has
+// never stored settings yields an empty (non-nil) map.
+func (r *GroupRepository) GetSettings(ctx context.Context, id uuid.UUID) (map[string]interface{}, error) {
+	entity, err := r.db.Group.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if entity.Settings == nil {
+		return map[string]interface{}{}, nil
+	}
+	return entity.Settings, nil
+}
+
+// UpdateSettings replaces the group's settings document wholesale.
+func (r *GroupRepository) UpdateSettings(ctx context.Context, id uuid.UUID, settings map[string]interface{}) error {
+	return r.db.Group.UpdateOneID(id).SetSettings(settings).Exec(ctx)
 }
 
 func (r *GroupRepository) GroupDelete(ctx context.Context, id uuid.UUID) error {

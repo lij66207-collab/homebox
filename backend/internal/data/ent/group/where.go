@@ -286,6 +286,16 @@ func CurrencyContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldCurrency, v))
 }
 
+// SettingsIsNil applies the IsNil predicate on the "settings" field.
+func SettingsIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldSettings))
+}
+
+// SettingsNotNil applies the NotNil predicate on the "settings" field.
+func SettingsNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldSettings))
+}
+
 // HasUsers applies the HasEdge predicate on the "users" edge.
 func HasUsers() predicate.Group {
 	return predicate.Group(func(s *sql.Selector) {

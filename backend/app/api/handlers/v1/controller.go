@@ -129,6 +129,7 @@ type (
 		AllowRegistration bool            `json:"allowRegistration"`
 		LabelPrinting     bool            `json:"labelPrinting"`
 		AIEnabled         bool            `json:"aiEnabled"`
+		AssistantEnabled  bool            `json:"assistantEnabled"`
 		OIDC              OIDCStatus      `json:"oidc"`
 		Telemetry         TelemetryStatus `json:"telemetry"`
 	}
@@ -194,6 +195,7 @@ func (ctrl *V1Controller) HandleBase(ready ReadyFunc, build Build) errchain.Hand
 			AllowRegistration: ctrl.allowRegistration,
 			LabelPrinting:     ctrl.config.LabelMaker.PrintCommand != nil,
 			AIEnabled:         ctrl.config.AI.Enabled && ctrl.config.AI.APIKey != "",
+			AssistantEnabled:  ctrl.config.AI.Enabled && ctrl.config.AI.APIKey != "",
 			OIDC: OIDCStatus{
 				Enabled:      ctrl.config.OIDC.Enabled,
 				ButtonText:   ctrl.config.OIDC.ButtonText,

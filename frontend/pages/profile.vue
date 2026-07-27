@@ -85,7 +85,7 @@
     if (response?.status === 204) {
       toast.success(t("profile.toast.account_deleted"));
       auth.logout(api);
-      navigateTo("/");
+      window.location.href = "/";
     }
 
     toast.error(t("profile.toast.failed_delete_account"));

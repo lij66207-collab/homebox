@@ -78,6 +78,12 @@ func (_c *GroupCreate) SetNillableCurrency(v *string) *GroupCreate {
 	return _c
 }
 
+// SetSettings sets the "settings" field.
+func (_c *GroupCreate) SetSettings(v map[string]interface{}) *GroupCreate {
+	_c.mutation.SetSettings(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *GroupCreate) SetID(v uuid.UUID) *GroupCreate {
 	_c.mutation.SetID(v)
@@ -349,6 +355,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Currency(); ok {
 		_spec.SetField(group.FieldCurrency, field.TypeString, value)
 		_node.Currency = value
+	}
+	if value, ok := _c.mutation.Settings(); ok {
+		_spec.SetField(group.FieldSettings, field.TypeJSON, value)
+		_node.Settings = value
 	}
 	if nodes := _c.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

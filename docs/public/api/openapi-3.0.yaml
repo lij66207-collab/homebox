@@ -322,6 +322,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/repo.PaginationResult-repo_EntitySummary"
+  /v1/assistant/voice:
+    post:
+      security:
+        - Bearer: []
+      description: Transcribes a recorded voice command with the group's configured
+      tags:
+        - Assistant
+      summary: AI Voice Assistant
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio:
+                  description: Recorded audio clip (max 10MB)
+                  type: string
+                  format: binary
+                history:
+                  description: JSON array of prior conversation messages [{\
+                  type: string
+              required:
+                - audio
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1.assistantVoiceResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "413":
+          description: Request Entity Too Large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "502":
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
+        "503":
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validate.ErrorResponse"
   /v1/currencies:
     get:
       tags:
@@ -1236,6 +1303,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/repo.ExportOut"
+  /v1/group/settings:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Group
+      summary: Get group settings
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/v1.Wrapped"
+                  - type: object
+                    properties:
+                      item:
+                        type: object
+                        additionalProperties: true
+    put:
+      security:
+        - Bearer: []
+      tags:
+        - Group
+      summary: Update group settings
+      requestBody:
+        $ref: "#/components/requestBodies/Payload"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/v1.Wrapped"
+                  - type: object
+                    properties:
+                      item:
+                        type: object
+                        additionalProperties: true
+  /v1/group/settings/test-serverchan:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Group
+      summary: Send a Server酱 test push
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1.GroupTestServerChanRequest"
+        description: Test payload; empty sendkey uses the stored one
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/v1.Wrapped"
+                  - type: object
+                    properties:
+                      item:
+                        type: string
   /v1/groups:
     get:
       security:
@@ -2381,13 +2514,7 @@ paths:
         - User
       summary: Update user settings
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-        description: Settings Data
-        required: true
+        $ref: "#/components/requestBodies/Payload"
       responses:
         "200":
           description: OK
@@ -2404,6 +2531,15 @@ paths:
 servers:
   - url: /api
 components:
+  requestBodies:
+    Payload:
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+      description: Settings Data
+      required: true
   securitySchemes:
     Bearer:
       description: "\"Type 'Bearer TOKEN' to correctly set the API Key\""
@@ -3047,6 +3183,10 @@ components:
         name:
           description: Name holds the value of the "name" field.
           type: string
+        settings:
+          description: Settings holds the value of the "settings" field.
+          type: object
+          additionalProperties: true
         updated_at:
           description: UpdatedAt holds the value of the "updated_at" field.
           type: string
@@ -4281,6 +4421,9 @@ components:
           type: string
         name:
           type: string
+        settings:
+          type: object
+          additionalProperties: true
         updatedAt:
           type: string
     repo.GroupInvitation:
@@ -4688,6 +4831,23 @@ components:
           type: string
         value:
           type: number
+    services.AssistantAction:
+      type: object
+      properties:
+        description:
+          type: string
+        keyword:
+          type: string
+        location_path:
+          type: string
+        name:
+          type: string
+        parent_path:
+          type: string
+        quantity:
+          type: number
+        type:
+          type: string
     services.EntityAIBatchItem:
       type: object
       properties:
@@ -4776,6 +4936,8 @@ components:
         aiEnabled:
           type: boolean
         allowRegistration:
+          type: boolean
+        assistantEnabled:
           type: boolean
         build:
           $ref: "#/components/schemas/v1.Build"
@@ -4942,6 +5104,11 @@ components:
           type: integer
           maximum: 100
           minimum: 1
+    v1.GroupTestServerChanRequest:
+      type: object
+      properties:
+        sendkey:
+          type: string
     v1.LoginForm:
       type: object
       properties:
@@ -5019,6 +5186,17 @@ components:
       type: object
       properties:
         query:
+          type: string
+    v1.assistantVoiceResponse:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/services.AssistantAction"
+        reply:
+          type: string
+        transcript:
           type: string
     v1.externalAttachmentRequest:
       type: object

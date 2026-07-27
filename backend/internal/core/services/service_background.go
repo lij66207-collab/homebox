@@ -241,6 +241,152 @@ func (svc *BackgroundService) SendWarrantyReminders(ctx context.Context) error {
 	return nil
 }
 
+// defaultExpiryReminderDays are the day-offsets before expiry that trigger a
+// Server酱 reminder when the group has not configured its own thresholds.
+var defaultExpiryReminderDays = []int{30, 7, 1}
+
+// defaultExpiryNotifyHour is the hour of day (local server time) at which
+// expiry reminders are sent unless the group configures notify_hour.
+const defaultExpiryNotifyHour = 8
+
+// expiryReminderConfig is the parsed `expiry_reminder` namespace of a group's
+// settings document.
+type expiryReminderConfig struct {
+	enabled    bool
+	sendKey    string
+	daysBefore []int
+	notifyHour int
+}
+
+// parseExpiryReminderConfig extracts the expiry reminder configuration from a
+// raw group settings document, applying defaults for absent values. Numbers
+// arrive as float64 because the document round-trips through JSON.
+func parseExpiryReminderConfig(settings map[string]interface{}) expiryReminderConfig {
+	cfg := expiryReminderConfig{
+		daysBefore: defaultExpiryReminderDays,
+		notifyHour: defaultExpiryNotifyHour,
+	}
+
+	ns, ok := settings[settingsNamespaceExpiryReminder].(map[string]interface{})
+	if !ok {
+		return cfg
+	}
+
+	cfg.enabled, _ = ns["enabled"].(bool)
+	cfg.sendKey, _ = ns[settingsKeySendkey].(string)
+
+	if v, ok := ns["notify_hour"].(float64); ok {
+		cfg.notifyHour = int(v)
+	}
+
+	if raw, ok := ns["days_before"].([]interface{}); ok {
+		days := make([]int, 0, len(raw))
+		for _, d := range raw {
+			if f, ok := d.(float64); ok && f >= 0 {
+				days = append(days, int(f))
+			}
+		}
+		if len(days) > 0 {
+			cfg.daysBefore = days
+		}
+	}
+
+	return cfg
+}
+
+// SendExpiryReminders pushes one aggregated Server酱 message per group about
+// items whose expiry date (stored in the warranty-expires field) is exactly N
+// days away, with N taken from the group's `expiry_reminder.days_before`
+// setting (default 30/7/1). A group is only considered when the reminder is
+// enabled, a sendkey is configured, and the current local hour matches the
+// group's notify_hour (default 8) — the recurring task calls this every hour.
+// A failure for one group is logged and does not stop the others.
+func (svc *BackgroundService) SendExpiryReminders(ctx context.Context) error {
+	groups, err := svc.repos.Groups.GetAllGroups(ctx, uuid.Nil)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	var firstErr error
+	for i := range groups {
+		group := groups[i]
+		logger := log.With().
+			Str("group_name", group.Name).
+			Str("group_id", group.ID.String()).
+			Logger()
+
+		settings, err := svc.repos.Groups.GetSettings(ctx, group.ID)
+		if err != nil {
+			logger.Err(err).Msg("expiry reminder: failed to load group settings")
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+
+		cfg := parseExpiryReminderConfig(settings)
+		if !cfg.enabled || cfg.sendKey == "" {
+			continue
+		}
+		if now.Hour() != cfg.notifyHour {
+			continue
+		}
+
+		maxDays := 0
+		thresholds := make(map[int]struct{}, len(cfg.daysBefore))
+		for _, d := range cfg.daysBefore {
+			thresholds[d] = struct{}{}
+			if d > maxDays {
+				maxDays = d
+			}
+		}
+
+		items, err := svc.repos.Entities.GetWarrantyExpiringBetween(ctx, group.ID, today, today.AddDate(0, 0, maxDays+1))
+		if err != nil {
+			logger.Err(err).Msg("expiry reminder: failed to query expiring items")
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+
+		bldr := strings.Builder{}
+		bldr.WriteString("| 物品 | 到期日期 | 剩余天数 |\n| --- | --- | --- |\n")
+		count := 0
+		for _, item := range items {
+			expires := item.WarrantyExpires.Time()
+			expiresDay := time.Date(expires.Year(), expires.Month(), expires.Day(), 0, 0, 0, 0, expires.Location())
+			days := int(expiresDay.Sub(today).Hours() / 24)
+			if _, ok := thresholds[days]; !ok {
+				continue
+			}
+			fmt.Fprintf(&bldr, "| %s | %s | %d 天 |\n", item.Name, expiresDay.Format("2006-01-02"), days)
+			count++
+		}
+
+		if count == 0 {
+			continue
+		}
+
+		title := fmt.Sprintf("Homebox 保质期提醒：%d 个物品即将到期", count)
+		if err := SendServerChan(ctx, cfg.sendKey, title, bldr.String()); err != nil {
+			// Never log the sendkey itself.
+			logger.Err(err).Msg("expiry reminder: serverchan push failed")
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+
+		logger.Info().Int("items", count).Msg("expiry reminder: serverchan push sent")
+	}
+
+	return firstErr
+}
+
 // SendLowStockReminders notifies each group about items whose quantity has
 // dropped to or below their configured low-stock threshold. Each item is
 // reported once per depletion cycle — the latch resets when the quantity

@@ -42,15 +42,19 @@
 
   const tagId = computed<string>(() => route.params.id as string);
 
-  const { data: tag } = useAsyncData(tagId.value, async () => {
-    const { data, error } = await api.tags.get(tagId.value);
-    if (error) {
-      toast.error(t("tags.toast.failed_load_tag"));
-      navigateTo("/home");
-      return;
-    }
-    return data;
-  });
+  const { data: tag } = useAsyncData(
+    tagId.value,
+    async () => {
+      const { data, error } = await api.tags.get(tagId.value);
+      if (error) {
+        toast.error(t("tags.toast.failed_load_tag"));
+        navigateTo("/home");
+        return;
+      }
+      return data;
+    },
+    { watch: [tagId] }
+  );
 
   const confirm = useConfirm();
 
@@ -219,101 +223,103 @@
 </script>
 
 <template>
-  <!-- Update Dialog -->
-  <Dialog :dialog-id="DialogID.UpdateTag">
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle> {{ $t("tags.update_tag") }} </DialogTitle>
-      </DialogHeader>
+  <div>
+    <!-- Update Dialog -->
+    <Dialog :dialog-id="DialogID.UpdateTag">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle> {{ $t("tags.update_tag") }} </DialogTitle>
+        </DialogHeader>
 
-      <form v-if="tag" class="flex flex-col gap-2" @submit.prevent="update">
-        <FormTextField
-          v-model="updateData.name"
-          :autofocus="true"
-          :label="$t('components.tag.create_modal.tag_name')"
-          :max-length="255"
-          :min-length="1"
-        />
-        <FormTextArea
-          v-model="updateData.description"
-          :label="$t('components.tag.create_modal.tag_description')"
-          :max-length="1000"
-        />
-        <TagSingleSelector
-          v-model="updateData.parentTag"
-          :tags="availableParentTags"
-          :name="$t('components.tag.create_modal.tag_parent')"
-        />
-        <ColorSelector
-          v-model="updateData.color"
-          :label="$t('components.tag.create_modal.tag_color')"
-          :show-hex="true"
-          :starting-color="tag.color"
-        />
-        <IconSelector v-model="updateData.icon" :label="$t('components.tag.create_modal.tag_icon')" />
-        <DialogFooter>
-          <Button type="submit" :loading="updating"> {{ $t("global.update") }} </Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  </Dialog>
+        <form v-if="tag" class="flex flex-col gap-2" @submit.prevent="update">
+          <FormTextField
+            v-model="updateData.name"
+            :autofocus="true"
+            :label="$t('components.tag.create_modal.tag_name')"
+            :max-length="255"
+            :min-length="1"
+          />
+          <FormTextArea
+            v-model="updateData.description"
+            :label="$t('components.tag.create_modal.tag_description')"
+            :max-length="1000"
+          />
+          <TagSingleSelector
+            v-model="updateData.parentTag"
+            :tags="availableParentTags"
+            :name="$t('components.tag.create_modal.tag_parent')"
+          />
+          <ColorSelector
+            v-model="updateData.color"
+            :label="$t('components.tag.create_modal.tag_color')"
+            :show-hex="true"
+            :starting-color="tag.color"
+          />
+          <IconSelector v-model="updateData.icon" :label="$t('components.tag.create_modal.tag_icon')" />
+          <DialogFooter>
+            <Button type="submit" :loading="updating"> {{ $t("global.update") }} </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
 
-  <BaseContainer v-if="tag">
-    <!-- set page title -->
-    <Title>{{ tag.name }}</Title>
+    <BaseContainer v-if="tag">
+      <!-- set page title -->
+      <Title>{{ tag.name }}</Title>
 
-    <Card class="p-3">
-      <header :class="{ 'mb-2': tag.description }">
-        <div class="flex flex-wrap items-end gap-2">
-          <div
-            class="mb-auto flex size-12 items-center justify-center rounded-full"
-            :style="
-              tag.color
-                ? { backgroundColor: tag.color, color: getContrastTextColor(tag.color) }
-                : { backgroundColor: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }
-            "
-          >
-            <component :is="tagIcon" class="size-7" />
-          </div>
-          <div>
-            <div v-if="tag?.parentId" class="flex flex-wrap items-center gap-2">
-              <template v-for="parent in getBreadcrumbPath()" :key="parent.id">
-                <TagChip :tag="parent" size="sm" />
-                <span class="text-foreground/40">/</span>
-              </template>
-              <TagChip :tag="tag" size="sm" hide-icon />
+      <Card class="p-3">
+        <header :class="{ 'mb-2': tag.description }">
+          <div class="flex flex-wrap items-end gap-2">
+            <div
+              class="mb-auto flex size-12 items-center justify-center rounded-full"
+              :style="
+                tag.color
+                  ? { backgroundColor: tag.color, color: getContrastTextColor(tag.color) }
+                  : { backgroundColor: 'hsl(var(--secondary))', color: 'hsl(var(--secondary-foreground))' }
+              "
+            >
+              <component :is="tagIcon" class="size-7" />
             </div>
-            <h1 class="flex items-center gap-3 pb-1 text-2xl">
-              {{ tag ? tag.name : "" }}
-              <Badge v-if="items && items.totalPrice" variant="secondary" class="ml-2">
-                <Currency :amount="items.totalPrice" />
-              </Badge>
-            </h1>
-            <div class="flex flex-wrap gap-1 text-xs">
-              <div>
-                {{ $t("global.created") }}
-                <DateTime :date="tag?.createdAt" />
+            <div>
+              <div v-if="tag?.parentId" class="flex flex-wrap items-center gap-2">
+                <template v-for="parent in getBreadcrumbPath()" :key="parent.id">
+                  <TagChip :tag="parent" size="sm" />
+                  <span class="text-foreground/40">/</span>
+                </template>
+                <TagChip :tag="tag" size="sm" hide-icon />
+              </div>
+              <h1 class="flex items-center gap-3 pb-1 text-2xl">
+                {{ tag ? tag.name : "" }}
+                <Badge v-if="items && items.totalPrice" variant="secondary" class="ml-2">
+                  <Currency :amount="items.totalPrice" />
+                </Badge>
+              </h1>
+              <div class="flex flex-wrap gap-1 text-xs">
+                <div>
+                  {{ $t("global.created") }}
+                  <DateTime :date="tag?.createdAt" />
+                </div>
               </div>
             </div>
+            <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-3">
+              <PageQRCode />
+              <Button @click="openUpdate">
+                <MdiPencil />
+                {{ $t("global.edit") }}
+              </Button>
+              <Button variant="destructive" @click="confirmDelete()">
+                <MdiDelete />
+                {{ $t("global.delete") }}
+              </Button>
+            </div>
           </div>
-          <div class="ml-auto mt-2 flex flex-wrap items-center justify-between gap-3">
-            <PageQRCode />
-            <Button @click="openUpdate">
-              <MdiPencil />
-              {{ $t("global.edit") }}
-            </Button>
-            <Button variant="destructive" @click="confirmDelete()">
-              <MdiDelete />
-              {{ $t("global.delete") }}
-            </Button>
-          </div>
-        </div>
-      </header>
-      <Separator v-if="tag && tag.description" />
-      <Markdown v-if="tag && tag.description" class="mt-3 text-base" :source="tag.description" />
-    </Card>
-    <section v-if="tag && items">
-      <ItemViewSelectable :items="items.items" @refresh="refreshItemList" />
-    </section>
-  </BaseContainer>
+        </header>
+        <Separator v-if="tag && tag.description" />
+        <Markdown v-if="tag && tag.description" class="mt-3 text-base" :source="tag.description" />
+      </Card>
+      <section v-if="tag && items">
+        <ItemViewSelectable :items="items.items" @refresh="refreshItemList" />
+      </section>
+    </BaseContainer>
+  </div>
 </template>

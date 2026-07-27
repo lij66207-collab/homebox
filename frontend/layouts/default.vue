@@ -270,6 +270,16 @@
       </SidebarInset>
     </SidebarProvider>
     <AppMobileTabBar />
+    <AppAssistantDialog />
+    <Button
+      v-if="assistantEnabled"
+      size="icon"
+      class="fixed bottom-24 right-4 z-30 size-12 rounded-full shadow-lg md:bottom-6 md:right-6"
+      :aria-label="$t('assistant.open')"
+      @click="openDialog(DialogID.Assistant)"
+    >
+      <MdiMicrophone class="size-6" />
+    </Button>
   </div>
 </template>
 
@@ -295,6 +305,7 @@
   import MdiShieldAccount from "~icons/mdi/shield-account";
   import MdiFileDocumentMultiple from "~icons/mdi/file-document-multiple";
   import MdiChevronRight from "~icons/mdi/chevron-right";
+  import MdiMicrophone from "~icons/mdi/microphone";
 
   import {
     Sidebar,
@@ -344,6 +355,7 @@
   import AppQuickMenuModal from "~/components/App/QuickMenuModal.vue";
   import AppMobileTabBar from "~/components/App/MobileTabBar.vue";
   import AppScannerModal from "~/components/App/ScannerModal.vue";
+  import AppAssistantDialog from "~/components/App/AssistantDialog.vue";
   import AppLogo from "~/components/App/Logo.vue";
   import AppHeaderDecor from "~/components/App/HeaderDecor.vue";
   import CollectionSelector from "~/components/Collection/Selector.vue";
@@ -374,6 +386,10 @@
 
     return data;
   });
+
+  // The floating voice-assistant button is only shown when the server has both
+  // AI and a per-collection STT configuration in place.
+  const assistantEnabled = computed(() => status.value?.assistantEnabled === true);
 
   const search = ref("");
 
@@ -537,6 +553,18 @@
                 active: computed(() => route.path === "/collection/notifiers"),
                 name: computed(() => t("collection.tabs.notifiers")),
                 to: "/collection/notifiers",
+              },
+              {
+                id: 67,
+                active: computed(() => route.path === "/collection/reminders"),
+                name: computed(() => t("collection.tabs.reminders")),
+                to: "/collection/reminders",
+              },
+              {
+                id: 68,
+                active: computed(() => route.path === "/collection/assistant"),
+                name: computed(() => t("collection.tabs.assistant")),
+                to: "/collection/assistant",
               },
               {
                 id: 64,
@@ -716,6 +744,7 @@
 
   async function logout() {
     await authCtx.logout(api);
-    navigateTo("/");
+    // Full reload so cached per-account pinia state is dropped (see login).
+    window.location.href = "/";
   }
 </script>

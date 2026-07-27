@@ -194,8 +194,12 @@
 
     toast.success(t("index.toast.login_success"));
 
-    navigateTo(redirectTo.value || "/home");
+    // Full reload (not SPA navigation): pinia stores (locations, tags, entity
+    // types) and their captured API clients hold the previous account's data
+    // and X-Tenant header otherwise, breaking creation for the new account.
+    const target = redirectTo.value || "/home";
     redirectTo.value = null;
+    window.location.href = target;
     loading.value = false;
   }
 

@@ -474,6 +474,8 @@ export interface EntGroup {
   id: string;
   /** Name holds the value of the "name" field. */
   name: string;
+  /** Settings holds the value of the "settings" field. */
+  settings: Record<string, any>;
   /** UpdatedAt holds the value of the "updated_at" field. */
   updated_at: string;
 }
@@ -1152,6 +1154,7 @@ export interface Group {
   currency: string;
   id: string;
   name: string;
+  settings: Record<string, any>;
   updatedAt: Date | string;
 }
 
@@ -1395,6 +1398,16 @@ export interface ValueOverTimeEntry {
   value: number;
 }
 
+export interface AssistantAction {
+  description: string;
+  keyword: string;
+  location_path: string;
+  name: string;
+  parent_path: string;
+  quantity: number;
+  type: string;
+}
+
 export interface EntityAIBatchItem {
   locationId: string;
   locationName: string;
@@ -1434,6 +1447,7 @@ export interface UserRegistration {
 export interface APISummary {
   aiEnabled: boolean;
   allowRegistration: boolean;
+  assistantEnabled: boolean;
   build: Build;
   demo: boolean;
   health: boolean;
@@ -1538,6 +1552,10 @@ export interface GroupInvitationCreate {
   uses: number;
 }
 
+export interface GroupTestServerChanRequest {
+  sendkey: string;
+}
+
 export interface LoginForm {
   /** @example "admin" */
   password: string;
@@ -1590,6 +1608,12 @@ export interface AiBatchParseRequest {
 
 export interface AiSearchRequest {
   query: string;
+}
+
+export interface AssistantVoiceResponse {
+  actions: AssistantAction[];
+  reply: string;
+  transcript: string;
 }
 
 export interface ExternalAttachmentRequest {

@@ -121,6 +121,14 @@ type aiCandidates struct {
 	Locations []aiCandidate
 }
 
+// Chat message roles, kept as constants so repeated literals stay under the
+// goconst threshold.
+const (
+	aiChatRoleSystem    = "system"
+	aiChatRoleUser      = "user"
+	aiChatRoleAssistant = "assistant"
+)
+
 type (
 	aiChatRequest struct {
 		Model    string          `json:"model"`
@@ -245,7 +253,7 @@ func (svc *AIService) loadCandidates(ctx context.Context, gid uuid.UUID) (aiCand
 
 func (svc *AIService) suggest(ctx context.Context, candidates aiCandidates, image []byte, mimeType string) (EntityAISuggestion, error) {
 	content, err := svc.chat(ctx, []aiChatMessage{
-		{Role: "system", Content: buildAISystemPrompt(candidates, svc.config.Language)},
+		{Role: aiChatRoleSystem, Content: buildAISystemPrompt(candidates, svc.config.Language)},
 		{Role: "user", Content: []aiContentPart{
 			{Type: "text", Text: "Analyze this photo of a household item and reply with the JSON object described in the system instructions."},
 			{Type: "image_url", ImageURL: &aiImageURL{URL: "data:" + mimeType + ";base64," + base64.StdEncoding.EncodeToString(image)}},
@@ -345,7 +353,7 @@ func (svc *AIService) ParseBatchText(ctx context.Context, groupID uuid.UUID, tex
 	}
 
 	content, err := svc.chat(ctx, []aiChatMessage{
-		{Role: "system", Content: buildAIBatchPrompt(candidates.Locations, svc.config.Language)},
+		{Role: aiChatRoleSystem, Content: buildAIBatchPrompt(candidates.Locations, svc.config.Language)},
 		{Role: "user", Content: text},
 	})
 	if err != nil {
@@ -432,7 +440,7 @@ func (svc *AIService) SearchItems(ctx context.Context, groupID uuid.UUID, query 
 	span.SetAttributes(attribute.Int("search.candidates.count", len(candidates)))
 
 	content, err := svc.chat(ctx, []aiChatMessage{
-		{Role: "system", Content: buildAISearchPrompt(candidates)},
+		{Role: aiChatRoleSystem, Content: buildAISearchPrompt(candidates)},
 		{Role: "user", Content: query},
 	})
 	if err != nil {

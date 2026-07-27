@@ -1,0 +1,39 @@
+---
+title: Expiry Reminders
+---
+
+## Overview
+
+Homebox can send expiry reminders through [Server酱 (ServerChan)](https://sct.ftqq.com/), which pushes messages to WeChat and other channels. Any entity with a **warranty expiry date** (`warranty_expires`) is treated as having a shelf life, and Homebox will push an aggregated reminder when items approach their expiry date.
+
+## How It Works
+
+- Once per hour, Homebox checks each collection's reminder configuration.
+- At the configured hour of the day, it collects all non-archived entities whose expiry date falls exactly on one of the configured "days before" thresholds (default: 30, 7, and 1 days ahead).
+- All matching items are aggregated into a single message (title + Markdown table) and sent to `https://sctapi.ftqq.com/<SendKey>.send`.
+
+Because items are matched on the exact threshold day, each item is reminded once per threshold — no duplicate pushes.
+
+:::note
+The free ServerChan tier allows only 5 messages per day. Aggregation keeps expiry reminders to at most one message per collection per day.
+:::
+
+## Configuration
+
+All settings are per-collection and configured in the web UI under **Collection → Reminders**:
+
+- **Enabled** — turns expiry reminders on for the collection.
+- **SendKey** — your ServerChan SendKey from the [SendKey page](https://sct.ftqq.com/). Stored server-side; the field shows a redacted placeholder once saved. Leave it empty to keep the existing key.
+- **Days before** — which thresholds trigger a reminder (30 / 7 / 3 / 1 days before expiry).
+- **Notify hour** — the hour of the day (0–23) at which the reminder is sent.
+
+Use the **Send test message** button to verify your SendKey immediately — a test push is sent through ServerChan and the result is shown as a toast.
+
+## Marking Items with an Expiry Date
+
+Edit an item and set its **warranty expiry** date. That date is used both for warranty tracking and for expiry reminders.
+
+## Troubleshooting
+
+- **Test button fails** — verify the SendKey is correct and that the Homebox server can reach `sctapi.ftqq.com`. Check the server logs for the ServerChan error message.
+- **No reminder at the expected time** — confirm the reminder is enabled, the notify hour matches your expectation (server local time), and the item's expiry date falls exactly on one of the configured thresholds.

@@ -627,6 +627,10 @@ definitions:
       name:
         description: Name holds the value of the "name" field.
         type: string
+      settings:
+        additionalProperties: true
+        description: Settings holds the value of the "settings" field.
+        type: object
       updated_at:
         description: UpdatedAt holds the value of the "updated_at" field.
         type: string
@@ -1853,6 +1857,9 @@ definitions:
         type: string
       name:
         type: string
+      settings:
+        additionalProperties: true
+        type: object
       updatedAt:
         type: string
     type: object
@@ -2261,6 +2268,23 @@ definitions:
       value:
         type: number
     type: object
+  services.AssistantAction:
+    properties:
+      description:
+        type: string
+      keyword:
+        type: string
+      location_path:
+        type: string
+      name:
+        type: string
+      parent_path:
+        type: string
+      quantity:
+        type: number
+      type:
+        type: string
+    type: object
   services.EntityAIBatchItem:
     properties:
       locationId:
@@ -2348,6 +2372,8 @@ definitions:
       aiEnabled:
         type: boolean
       allowRegistration:
+        type: boolean
+      assistantEnabled:
         type: boolean
       build:
         $ref: '#/definitions/v1.Build'
@@ -2513,6 +2539,11 @@ definitions:
     required:
     - uses
     type: object
+  v1.GroupTestServerChanRequest:
+    properties:
+      sendkey:
+        type: string
+    type: object
   v1.LoginForm:
     properties:
       password:
@@ -2589,6 +2620,17 @@ definitions:
   v1.aiSearchRequest:
     properties:
       query:
+        type: string
+    type: object
+  v1.assistantVoiceResponse:
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/services.AssistantAction'
+        type: array
+      reply:
+        type: string
+      transcript:
         type: string
     type: object
   v1.externalAttachmentRequest:
@@ -2909,6 +2951,57 @@ paths:
       summary: Get Item by Asset ID
       tags:
       - Items
+  /v1/assistant/voice:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Transcribes a recorded voice command with the group's configured
+      parameters:
+      - description: Recorded audio clip (max 10MB)
+        in: formData
+        name: audio
+        required: true
+        type: file
+      - description: JSON array of prior conversation messages [{\
+        in: formData
+        name: history
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.assistantVoiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/validate.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: AI Voice Assistant
+      tags:
+      - Assistant
   /v1/currencies:
     get:
       produces:
@@ -3750,6 +3843,78 @@ paths:
       security:
       - Bearer: []
       summary: Import a Collection Zip
+      tags:
+      - Group
+  /v1/group/settings:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  additionalProperties: true
+                  type: object
+              type: object
+      security:
+      - Bearer: []
+      summary: Get group settings
+      tags:
+      - Group
+    put:
+      parameters:
+      - description: Settings Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  additionalProperties: true
+                  type: object
+              type: object
+      security:
+      - Bearer: []
+      summary: Update group settings
+      tags:
+      - Group
+  /v1/group/settings/test-serverchan:
+    post:
+      parameters:
+      - description: Test payload; empty sendkey uses the stored one
+        in: body
+        name: payload
+        schema:
+          $ref: '#/definitions/v1.GroupTestServerChanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/v1.Wrapped'
+            - properties:
+                item:
+                  type: string
+              type: object
+      security:
+      - Bearer: []
+      summary: Send a Server酱 test push
       tags:
       - Group
   /v1/groups:

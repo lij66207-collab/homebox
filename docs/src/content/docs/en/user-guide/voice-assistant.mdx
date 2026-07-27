@@ -1,0 +1,53 @@
+---
+title: Voice Assistant
+---
+
+## Overview
+
+Homebox includes an AI voice assistant that lets you manage your inventory hands-free. Speak a command like "the fan is at location 002" and the assistant will propose the matching action (create a location, create an item, or look something up) and ask for your confirmation before anything is saved.
+
+The assistant works in two stages:
+
+1. **Speech-to-text (STT)** — your recorded audio is transcribed by an OpenAI-compatible audio transcription endpoint (`/audio/transcriptions`, e.g. OpenAI Whisper, Groq, or a self-hosted faster-whisper server).
+2. **Intent parsing** — the transcript is interpreted by the configured chat model (the same OpenAI-compatible/Kimi integration used for photo recognition, configured via `HBOX_AI_*`).
+
+:::note
+Kimi (Moonshot) does not provide a speech-to-text API, so the STT endpoint must be configured separately even if you already use Kimi for photo recognition.
+:::
+
+## Prerequisites
+
+- The server-level AI integration must be enabled (`HBOX_AI_ENABLED=true` with `HBOX_AI_API_KEY`, and optionally `HBOX_AI_BASE_URL` / `HBOX_AI_MODEL`). See the AI configuration in your server environment.
+- An OpenAI-compatible audio transcription endpoint (base URL, API key, and model name, e.g. `whisper-1`).
+
+## Configuration
+
+All assistant settings are per-collection and configured in the web UI under **Collection → Voice Assistant**:
+
+- **Enabled** — turns the assistant on for the collection.
+- **STT Base URL** — e.g. `https://api.openai.com/v1`.
+- **STT API Key** — stored server-side; the field shows a redacted placeholder once saved. Leave it empty to keep the existing key.
+- **STT Model** — e.g. `whisper-1`.
+
+If the server-level AI integration is not enabled, the page shows a hint to configure `HBOX_AI_*` first.
+
+## Using the Assistant
+
+1. Click the floating microphone button (bottom right) to open the assistant dialog.
+2. Click the microphone to start recording, click again to stop and send.
+3. The assistant shows the transcript of what you said and its reply (also read aloud via the browser's speech synthesis when available).
+4. If the assistant proposes actions — such as creating location "004" or adding an item to a location — review the confirmation card and click **Confirm** to execute or **Cancel** to discard.
+
+Supported actions in this first version:
+
+- **Create location** (optionally under a parent location)
+- **Create item** (optionally placed in an existing location, with quantity and description)
+- **Query items** and **query locations** by keyword
+
+The conversation is multi-turn: you can keep speaking to refine or follow up, and the assistant keeps the recent context.
+
+## Troubleshooting
+
+- **"STT not configured" error** — fill in the STT settings under Collection → Voice Assistant.
+- **No microphone prompt / recording fails** — grant microphone permission in your browser; the page must be served over HTTPS (or localhost) for microphone access.
+- **Reply is not read aloud** — browser speech synthesis depends on installed system voices; the text reply is always shown regardless.

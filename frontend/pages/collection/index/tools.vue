@@ -122,7 +122,7 @@
             <p class="text-sm text-muted-foreground">{{ $t("tools.backups_set.schedule_sub") }}</p>
             <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
               <div class="flex items-center gap-2">
-                <Switch id="backup-schedule-enabled" v-model:checked="schedule.enabled" />
+                <Switch id="backup-schedule-enabled" v-model="schedule.enabled" />
                 <Label for="backup-schedule-enabled">{{ $t("tools.backups_set.schedule_enabled") }}</Label>
               </div>
               <div class="flex items-center gap-2">

@@ -62,20 +62,7 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 	}))
 
 	runner.AddPlugin(NewTask("send-notifications", time.Hour, func(ctx context.Context) {
-		now := time.Now()
-		if now.Hour() == 8 {
-			fmt.Println("run notifiers")
-			err := app.services.BackgroundService.SendNotifiersToday(context.Background())
-			if err != nil {
-				log.Error().Err(err).Msg("failed to send notifiers")
-			}
-			if err := app.services.BackgroundService.SendWarrantyReminders(context.Background()); err != nil {
-				log.Error().Err(err).Msg("failed to send warranty reminders")
-			}
-			if err := app.services.BackgroundService.SendLowStockReminders(context.Background()); err != nil {
-				log.Error().Err(err).Msg("failed to send low stock reminders")
-			}
-		}
+		sendScheduledNotifications(app)
 	}))
 
 	runner.AddFunc("collection-export-subscription", func(ctx context.Context) error {
@@ -214,6 +201,30 @@ func registerRecurringTasks(app *app, cfg *config.Config, runner *graceful.Runne
 		})
 		// Print the configuration to the console
 		cfg.Print()
+	}
+}
+
+// sendScheduledNotifications runs the hourly notification fan-out. The
+// legacy maintenance/warranty/low-stock reminders keep their hard-coded
+// 08:00 trigger; expiry reminders instead honor each group's
+// expiry_reminder.notify_hour setting (SendExpiryReminders checks it
+// itself), so this runs every hour regardless.
+func sendScheduledNotifications(app *app) {
+	if time.Now().Hour() == 8 {
+		fmt.Println("run notifiers")
+		if err := app.services.BackgroundService.SendNotifiersToday(context.Background()); err != nil {
+			log.Error().Err(err).Msg("failed to send notifiers")
+		}
+		if err := app.services.BackgroundService.SendWarrantyReminders(context.Background()); err != nil {
+			log.Error().Err(err).Msg("failed to send warranty reminders")
+		}
+		if err := app.services.BackgroundService.SendLowStockReminders(context.Background()); err != nil {
+			log.Error().Err(err).Msg("failed to send low stock reminders")
+		}
+	}
+
+	if err := app.services.BackgroundService.SendExpiryReminders(context.Background()); err != nil {
+		log.Error().Err(err).Msg("failed to send expiry reminders")
 	}
 }
 

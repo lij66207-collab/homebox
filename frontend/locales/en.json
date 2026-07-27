@@ -1,4 +1,49 @@
 {
+    "assistant": {
+        "dialog": {
+            "cancel": "Cancel",
+            "cancelled": "Cancelled",
+            "confirm": "Confirm",
+            "create_failed": "Creation failed.",
+            "create_item": "Create item",
+            "create_location": "Create location",
+            "create_success": "Created successfully.",
+            "done": "Done",
+            "empty": "No conversation yet. Tap the microphone and say something like \"put the fan in location 002\".",
+            "hint": "Tap the microphone to start recording, tap again to stop and send.",
+            "location_label": "Location",
+            "location_not_found": "Location path not found; created without a parent location.",
+            "mic_denied": "Microphone permission denied. Please allow microphone access in your browser's site settings.",
+            "mic_insecure": "Microphone requires a secure context (HTTPS). Please access Homebox via https:// or localhost.",
+            "mic_unsupported": "Microphone recording is not supported in this browser.",
+            "no_results": "No matching results.",
+            "not_configured": "The voice assistant is not configured. Please set up STT in Collection → Voice Assistant.",
+            "processing": "Processing…",
+            "quantity_label": "Quantity",
+            "query_results": "Results",
+            "recording": "Recording… tap again to stop and send",
+            "request_failed": "The voice request failed. Please try again.",
+            "title": "Voice Assistant"
+        },
+        "open": "Voice Assistant",
+        "settings": {
+            "ai_disabled_hint": "The AI service is not enabled on the server. Configure the HBOX_AI_* environment variables (e.g. for Kimi) to enable intent parsing for the voice assistant.",
+            "description": "Configure the speech-to-text (STT) endpoint used by the voice assistant. It must expose an OpenAI-compatible /audio/transcriptions endpoint (OpenAI Whisper, Groq, or a self-hosted faster-whisper). Note: Kimi does not provide speech recognition, so a separate STT service is required.",
+            "enabled": "Enable voice assistant",
+            "save": "Save",
+            "stt_api_key": "STT API Key",
+            "stt_api_key_configured_placeholder": "Configured (leave blank to keep the current key)",
+            "stt_api_key_placeholder": "Not configured",
+            "stt_base_url": "STT Base URL",
+            "stt_base_url_hint": "OpenAI-compatible API base, e.g. https://api.openai.com/v1. The server posts audio to the /audio/transcriptions endpoint under this base URL.",
+            "stt_model": "STT Model",
+            "toast": {
+                "load_failed": "Failed to load assistant settings.",
+                "save_failed": "Failed to save assistant settings.",
+                "saved": "Assistant settings saved."
+            }
+        }
+    },
     "collection": {
         "copy_invite": "Copy Invite Link",
         "create_invite": "Create Invite",
@@ -35,10 +80,12 @@
         "no_invites": "No invites",
         "remaining_uses": "Remaining uses",
         "tabs": {
+            "assistant": "Voice Assistant",
             "entity_types": "Entity Types",
             "invites": "Invites",
             "members": "Members",
             "notifiers": "Notifiers",
+            "reminders": "Reminders",
             "settings": "Settings",
             "tools": "Tools"
         },
@@ -979,6 +1026,25 @@
         "url": "URL",
         "user_profile": "User Profile",
         "user_profile_sub": "Invite users, and manage your account."
+    },
+    "reminders": {
+        "days_before": "Remind days before expiry",
+        "days_option": "{days} days",
+        "description": "Receive a Server酱 (ServerChan) push when items are about to expire. The warranty expiration date of an item is used as its expiry date.",
+        "enabled": "Enable expiry reminders",
+        "notify_hour": "Notification time",
+        "save": "Save",
+        "send_test": "Send test message",
+        "sendkey": "ServerChan SendKey",
+        "sendkey_configured_placeholder": "Configured (leave blank to keep the current key)",
+        "sendkey_placeholder": "Not configured",
+        "toast": {
+            "load_failed": "Failed to load reminder settings.",
+            "save_failed": "Failed to save reminder settings.",
+            "saved": "Reminder settings saved.",
+            "test_failed": "Failed to send the test message. Check the SendKey.",
+            "test_sent": "Test message sent."
+        }
     },
     "reports": {
         "label_generator": {

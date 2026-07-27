@@ -5,9 +5,33 @@ import type {
   GroupAcceptInvitationResponse,
   GroupInvitation,
   GroupInvitationCreate,
+  GroupTestServerChanRequest,
   GroupUpdate,
   UserSummary,
 } from "../types/data-contracts";
+import type { Result } from "../types/non-generated";
+
+/**
+ * AssistantSettings is the shape of the `assistant` namespace in the group
+ * settings JSON. `stt_api_key` is redacted by the server on reads ("REDACTED").
+ */
+export interface AssistantSettings {
+  enabled: boolean;
+  stt_base_url: string;
+  stt_api_key: string;
+  stt_model: string;
+}
+
+/**
+ * ExpiryReminderSettings is the shape of the `expiry_reminder` namespace in the
+ * group settings JSON. `sendkey` is redacted by the server on reads.
+ */
+export interface ExpiryReminderSettings {
+  enabled: boolean;
+  sendkey: string;
+  days_before: number[];
+  notify_hour: number;
+}
 
 export class GroupApi extends BaseAPI {
   /**
@@ -153,6 +177,37 @@ export class GroupApi extends BaseAPI {
   currencies() {
     return this.http.get<CurrenciesCurrency[]>({
       url: route("/currencies"),
+    });
+  }
+
+  /**
+   * Get the raw group settings JSON (sensitive values are redacted by the
+   * server, e.g. "REDACTED").
+   */
+  getSettings() {
+    return this.http.get<Result<Record<string, unknown>>>({
+      url: route("/group/settings"),
+    });
+  }
+
+  /**
+   * Replace the group settings JSON. Sensitive keys sent back as "REDACTED"
+   * (or "") keep their stored values server-side.
+   */
+  updateSettings(settings: Record<string, unknown>) {
+    return this.http.put<Record<string, unknown>, Result<Record<string, unknown>>>({
+      url: route("/group/settings"),
+      body: settings,
+    });
+  }
+
+  /**
+   * Send a Server酱 test push. When `sendkey` is empty, the stored one is used.
+   */
+  testServerChan(sendkey = "") {
+    return this.http.post<GroupTestServerChanRequest, Result<string>>({
+      url: route("/group/settings/test-serverchan"),
+      body: { sendkey },
     });
   }
 }

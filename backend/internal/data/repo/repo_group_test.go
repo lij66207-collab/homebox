@@ -95,3 +95,39 @@ func Test_Group_IsMember(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, isMember)
 }
+
+func Test_Group_Settings(t *testing.T) {
+	ctx := context.Background()
+
+	g, err := tRepos.Groups.GroupCreate(ctx, "settings-group", uuid.Nil)
+	require.NoError(t, err)
+
+	// A fresh group yields an empty, non-nil settings map.
+	settings, err := tRepos.Groups.GetSettings(ctx, g.ID)
+	require.NoError(t, err)
+	require.NotNil(t, settings)
+	assert.Empty(t, settings)
+
+	// Settings round-trip through the repository.
+	want := map[string]interface{}{
+		"assistant": map[string]interface{}{
+			"enabled":     true,
+			"stt_api_key": "sk-secret",
+			"stt_model":   "whisper-1",
+		},
+		"expiry_reminder": map[string]interface{}{
+			"enabled": true,
+			"sendkey": "sct-secret",
+		},
+	}
+	require.NoError(t, tRepos.Groups.UpdateSettings(ctx, g.ID, want))
+
+	got, err := tRepos.Groups.GetSettings(ctx, g.ID)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+
+	// The group mapper exposes settings as well.
+	found, err := tRepos.Groups.GroupByID(ctx, g.ID)
+	require.NoError(t, err)
+	assert.Equal(t, want, found.Settings)
+}
