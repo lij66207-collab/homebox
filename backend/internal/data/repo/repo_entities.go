@@ -40,6 +40,26 @@ func recordSpanError(span trace.Span, err error) {
 	span.SetStatus(codes.Error, err.Error())
 }
 
+// deriveExpiryFields fills in whichever expiry field the caller left empty:
+// production_date + shelf_life_days derives expiry_date; production_date +
+// expiry_date derives shelf_life_days. Without a production_date nothing is
+// derived, and when both targets are already set the user values are kept.
+func deriveExpiryFields(production types.Date, shelfLife *int, expiry types.Date) (types.Date, *int, types.Date) {
+	pt := production.Time()
+	if pt.IsZero() {
+		return production, shelfLife, expiry
+	}
+
+	if shelfLife != nil && expiry.Time().IsZero() {
+		expiry = types.DateFromTime(pt.AddDate(0, 0, *shelfLife))
+	} else if shelfLife == nil && !expiry.Time().IsZero() {
+		days := int(expiry.Time().Sub(pt).Hours() / 24)
+		shelfLife = &days
+	}
+
+	return production, shelfLife, expiry
+}
+
 type EntityRepository struct {
 	db          *ent.Client
 	bus         *eventbus.EventBus
@@ -69,6 +89,9 @@ type (
 		OnlyWithPhoto    bool    `json:"onlyWithPhoto"`
 		IncludeArchived  bool    `json:"includeArchived"`
 		FilterChildren   bool    `json:"filterChildren"` // when true, only return root entities (no parent)
+		// ExpiringWithinDays, when > 0, restricts results to non-archived
+		// entities whose expiry_date falls within the next N days.
+		ExpiringWithinDays int `json:"expiringWithinDays"`
 	}
 
 	DuplicateOptions struct {
@@ -101,12 +124,22 @@ type (
 		ModelNumber  string `json:"modelNumber"  validate:"max=255" extensions:"x-nullable,x-omitempty"`
 		Manufacturer string `json:"manufacturer" validate:"max=255" extensions:"x-nullable,x-omitempty"`
 
+		// Expiry — optional; expiry_date is derived from production_date +
+		// shelf_life_days (or vice versa) when only two of the three are set.
+		ProductionDate types.Date `json:"productionDate,omitempty"`
+		ShelfLifeDays  *int       `json:"shelfLifeDays,omitempty"  extensions:"x-nullable,x-omitempty"`
+		ExpiryDate     types.Date `json:"expiryDate,omitempty"`
+
 		// Edges
 		TagIDs []uuid.UUID `json:"tagIds"`
 	}
 
 	EntityUpdate struct {
 		WarrantyExpires types.Date `json:"warrantyExpires"`
+		// Expiry — zero date / nil shelf life clears the column
+		ProductionDate types.Date `json:"productionDate"`
+		ShelfLifeDays  *int       `json:"shelfLifeDays"  extensions:"x-nullable,x-omitempty"`
+		ExpiryDate     types.Date `json:"expiryDate"`
 		// Purchase
 		PurchaseDate types.Date `json:"purchaseDate"`
 		// Sold
@@ -164,6 +197,11 @@ type (
 		UpdatedAt   time.Time `json:"updatedAt"`
 
 		PurchasePrice float64 `json:"purchasePrice"`
+
+		// Expiry
+		ProductionDate types.Date `json:"productionDate"`
+		ShelfLifeDays  *int       `json:"shelfLifeDays,omitempty" extensions:"x-nullable,x-omitempty"`
+		ExpiryDate     types.Date `json:"expiryDate"`
 
 		// Low stock
 		LowStockThreshold *float64 `json:"lowStockThreshold,omitempty" extensions:"x-nullable,x-omitempty"`
@@ -274,6 +312,11 @@ func mapEntitySummary(e *ent.Entity) EntitySummary {
 		UpdatedAt:     e.UpdatedAt,
 		Archived:      e.Archived,
 		PurchasePrice: e.PurchasePrice,
+
+		// Expiry
+		ProductionDate: types.DateFromTime(e.ProductionDate),
+		ShelfLifeDays:  e.ShelfLifeDays,
+		ExpiryDate:     types.DateFromTime(e.ExpiryDate),
 
 		// Low stock
 		LowStockThreshold: e.LowStockThreshold,
@@ -603,6 +646,20 @@ func entityQuerySpanAttrs(gid uuid.UUID, q EntityQuery) []attribute.KeyValue {
 	}
 }
 
+// withExpiringWithin restricts the query to non-archived entities whose
+// expiry_date falls within the next `days` days; days <= 0 leaves the query
+// unchanged.
+func withExpiringWithin(qb *ent.EntityQuery, days int) *ent.EntityQuery {
+	if days <= 0 {
+		return qb
+	}
+	return qb.Where(
+		entity.Archived(false),
+		entity.ExpiryDateNotNil(),
+		entity.ExpiryDateLTE(time.Now().AddDate(0, 0, days)),
+	)
+}
+
 // QueryByGroup returns a list of entities that belong to a specific group based on the provided query.
 func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q EntityQuery) (PaginationResult[EntitySummary], error) {
 	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.QueryByGroup",
@@ -642,6 +699,8 @@ func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q En
 	} else {
 		qb = qb.Where(entity.Archived(false))
 	}
+
+	qb = withExpiringWithin(qb, q.ExpiringWithinDays)
 
 	if q.Search != "" {
 		qb.Where(
@@ -973,6 +1032,30 @@ func (r *EntityRepository) GetWarrantyExpiringBetween(ctx context.Context, gid u
 	return out, nil
 }
 
+// GetExpiringBetween returns non-archived items whose expiry_date falls
+// within [from, to), excluding rows without an expiry date. Used by the
+// expiry (保质期) reminder job.
+func (r *EntityRepository) GetExpiringBetween(ctx context.Context, gid uuid.UUID, from, to time.Time) ([]EntityOut, error) {
+	ctx, span := entityTracer().Start(ctx, "repo.EntityRepository.GetExpiringBetween",
+		trace.WithAttributes(attribute.String("group.id", gid.String())))
+	defer span.End()
+
+	out, err := mapEntitiesOutErr(r.db.Entity.Query().
+		Where(
+			entity.HasGroupWith(group.ID(gid)),
+			entity.Archived(false),
+			entity.ExpiryDateNotNil(),
+			entity.ExpiryDateGTE(from),
+			entity.ExpiryDateLT(to),
+		).
+		All(ctx))
+	if err != nil {
+		recordSpanError(span, err)
+		return out, err
+	}
+	return out, nil
+}
+
 // GetLowStock returns non-archived items that have a low-stock threshold
 // configured, whose quantity has dropped to or below it, and which have not
 // been notified yet (the notified latch resets when quantity rises again).
@@ -1161,6 +1244,20 @@ func (r *EntityRepository) Create(ctx context.Context, gid uuid.UUID, data Entit
 		SetManufacturer(data.Manufacturer).
 		SetGroupID(gid).
 		SetAssetID(int64(data.AssetID))
+
+	// Expiry fields are optional: skip Set on zero dates / nil shelf life so
+	// the columns stay NULL. Derivation fills in whichever of expiry_date /
+	// shelf_life_days the caller left empty when production_date is set.
+	production, shelfLife, expiry := deriveExpiryFields(data.ProductionDate, data.ShelfLifeDays, data.ExpiryDate)
+	if t := production.Time(); !t.IsZero() {
+		q.SetProductionDate(t)
+	}
+	if shelfLife != nil {
+		q.SetShelfLifeDays(*shelfLife)
+	}
+	if t := expiry.Time(); !t.IsZero() {
+		q.SetExpiryDate(t)
+	}
 
 	if data.ParentID != uuid.Nil {
 		q.SetParentID(data.ParentID)
@@ -1661,6 +1758,26 @@ func (r *EntityRepository) UpdateByGroup(ctx context.Context, gid uuid.UUID, dat
 		q.ClearWarrantyExpires()
 	} else {
 		q.SetWarrantyExpires(t)
+	}
+
+	// Expiry fields follow the same clear/set pattern; derivation fills in
+	// whichever of expiry_date / shelf_life_days the caller left empty when
+	// production_date is set.
+	production, shelfLife, expiry := deriveExpiryFields(data.ProductionDate, data.ShelfLifeDays, data.ExpiryDate)
+	if t := production.Time(); t.IsZero() {
+		q.ClearProductionDate()
+	} else {
+		q.SetProductionDate(t)
+	}
+	if shelfLife == nil {
+		q.ClearShelfLifeDays()
+	} else {
+		q.SetShelfLifeDays(*shelfLife)
+	}
+	if t := expiry.Time(); t.IsZero() {
+		q.ClearExpiryDate()
+	} else {
+		q.SetExpiryDate(t)
 	}
 
 	if data.EntityTypeID != uuid.Nil {
@@ -2327,6 +2444,15 @@ func (r *EntityRepository) Duplicate(ctx context.Context, gid, id uuid.UUID, opt
 	}
 	if t := originalEntity.WarrantyExpires.Time(); !t.IsZero() {
 		entityBuilder.SetWarrantyExpires(t)
+	}
+	if t := originalEntity.ProductionDate.Time(); !t.IsZero() {
+		entityBuilder.SetProductionDate(t)
+	}
+	if originalEntity.ShelfLifeDays != nil {
+		entityBuilder.SetShelfLifeDays(*originalEntity.ShelfLifeDays)
+	}
+	if t := originalEntity.ExpiryDate.Time(); !t.IsZero() {
+		entityBuilder.SetExpiryDate(t)
 	}
 
 	if originalEntity.Parent != nil {

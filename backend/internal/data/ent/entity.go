@@ -58,6 +58,12 @@ type Entity struct {
 	WarrantyExpires time.Time `json:"warranty_expires,omitempty"`
 	// WarrantyDetails holds the value of the "warranty_details" field.
 	WarrantyDetails string `json:"warranty_details,omitempty"`
+	// ProductionDate holds the value of the "production_date" field.
+	ProductionDate time.Time `json:"production_date,omitempty"`
+	// ShelfLifeDays holds the value of the "shelf_life_days" field.
+	ShelfLifeDays *int `json:"shelf_life_days,omitempty"`
+	// ExpiryDate holds the value of the "expiry_date" field.
+	ExpiryDate time.Time `json:"expiry_date,omitempty"`
 	// PurchaseDate holds the value of the "purchase_date" field.
 	PurchaseDate time.Time `json:"purchase_date,omitempty"`
 	// PurchaseFrom holds the value of the "purchase_from" field.
@@ -191,11 +197,11 @@ func (*Entity) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case entity.FieldQuantity, entity.FieldLowStockThreshold, entity.FieldPurchasePrice, entity.FieldSoldPrice:
 			values[i] = new(sql.NullFloat64)
-		case entity.FieldAssetID:
+		case entity.FieldAssetID, entity.FieldShelfLifeDays:
 			values[i] = new(sql.NullInt64)
 		case entity.FieldName, entity.FieldDescription, entity.FieldImportRef, entity.FieldNotes, entity.FieldSerialNumber, entity.FieldModelNumber, entity.FieldManufacturer, entity.FieldWarrantyDetails, entity.FieldPurchaseFrom, entity.FieldSoldTo, entity.FieldSoldNotes:
 			values[i] = new(sql.NullString)
-		case entity.FieldCreatedAt, entity.FieldUpdatedAt, entity.FieldWarrantyExpires, entity.FieldPurchaseDate, entity.FieldSoldDate:
+		case entity.FieldCreatedAt, entity.FieldUpdatedAt, entity.FieldWarrantyExpires, entity.FieldProductionDate, entity.FieldExpiryDate, entity.FieldPurchaseDate, entity.FieldSoldDate:
 			values[i] = new(sql.NullTime)
 		case entity.FieldID:
 			values[i] = new(uuid.UUID)
@@ -340,6 +346,25 @@ func (_m *Entity) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field warranty_details", values[i])
 			} else if value.Valid {
 				_m.WarrantyDetails = value.String
+			}
+		case entity.FieldProductionDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field production_date", values[i])
+			} else if value.Valid {
+				_m.ProductionDate = value.Time
+			}
+		case entity.FieldShelfLifeDays:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field shelf_life_days", values[i])
+			} else if value.Valid {
+				_m.ShelfLifeDays = new(int)
+				*_m.ShelfLifeDays = int(value.Int64)
+			}
+		case entity.FieldExpiryDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_date", values[i])
+			} else if value.Valid {
+				_m.ExpiryDate = value.Time
 			}
 		case entity.FieldPurchaseDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -538,6 +563,17 @@ func (_m *Entity) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("warranty_details=")
 	builder.WriteString(_m.WarrantyDetails)
+	builder.WriteString(", ")
+	builder.WriteString("production_date=")
+	builder.WriteString(_m.ProductionDate.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := _m.ShelfLifeDays; v != nil {
+		builder.WriteString("shelf_life_days=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("expiry_date=")
+	builder.WriteString(_m.ExpiryDate.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("purchase_date=")
 	builder.WriteString(_m.PurchaseDate.Format(time.ANSIC))

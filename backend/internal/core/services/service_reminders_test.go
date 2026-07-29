@@ -112,3 +112,31 @@ func TestWarrantyExpiringBetween(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotContains(t, uuidSlice(items), e.ID)
 }
+
+// TestExpiringBetween covers the repo query behind SendExpiryReminders,
+// which reads the expiry_date field (截止日期), not warranty_expires.
+func TestExpiringBetween(t *testing.T) {
+	ctx := context.Background()
+	gid := tGroup.ID
+
+	expires := types.DateFromTime(time.Now().AddDate(0, 0, 10))
+	e, err := tRepos.Entities.Create(ctx, gid, repo.EntityCreate{
+		Name:       "expiry-" + fk.Str(6),
+		Quantity:   1,
+		ExpiryDate: expires,
+	})
+	require.NoError(t, err)
+
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	// Within 31-day window → found.
+	items, err := tRepos.Entities.GetExpiringBetween(ctx, gid, today, today.AddDate(0, 0, 31))
+	require.NoError(t, err)
+	assert.Contains(t, uuidSlice(items), e.ID)
+
+	// Outside window → not found.
+	items, err = tRepos.Entities.GetExpiringBetween(ctx, gid, today, today.AddDate(0, 0, 5))
+	require.NoError(t, err)
+	assert.NotContains(t, uuidSlice(items), e.ID)
+}

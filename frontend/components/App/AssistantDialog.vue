@@ -116,6 +116,7 @@
   import { useEntityTypeStore } from "~~/stores/entityTypes";
   import type { AssistantHistoryMessage } from "~~/lib/api/classes/assistant";
   import type { AssistantAction, TreeItem } from "~~/lib/api/types/data-contracts";
+  import { toDateOnlyString } from "~/lib/datelib/dateOnly";
   import MdiMicrophone from "~icons/mdi/microphone";
   import MdiStop from "~icons/mdi/stop";
   import MdiLoading from "~icons/mdi/loading";
@@ -379,6 +380,8 @@
       entityTypeId: locationType.id,
       quantity: 1,
       tagIds: [],
+      productionDate: "",
+      expiryDate: "",
     });
 
     if (error) {
@@ -417,6 +420,9 @@
       quantity: action.quantity && action.quantity >= 1 ? action.quantity : 1,
       tagIds: [],
       entityTypeId: itemType.id,
+      productionDate: toDateOnlyString(action.production_date),
+      shelfLifeDays: action.shelf_life_days > 0 ? action.shelf_life_days : null,
+      expiryDate: toDateOnlyString(action.expiry_date),
     });
 
     if (error) {

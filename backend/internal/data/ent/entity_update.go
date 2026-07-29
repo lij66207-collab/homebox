@@ -354,6 +354,73 @@ func (_u *EntityUpdate) ClearWarrantyDetails() *EntityUpdate {
 	return _u
 }
 
+// SetProductionDate sets the "production_date" field.
+func (_u *EntityUpdate) SetProductionDate(v time.Time) *EntityUpdate {
+	_u.mutation.SetProductionDate(v)
+	return _u
+}
+
+// SetNillableProductionDate sets the "production_date" field if the given value is not nil.
+func (_u *EntityUpdate) SetNillableProductionDate(v *time.Time) *EntityUpdate {
+	if v != nil {
+		_u.SetProductionDate(*v)
+	}
+	return _u
+}
+
+// ClearProductionDate clears the value of the "production_date" field.
+func (_u *EntityUpdate) ClearProductionDate() *EntityUpdate {
+	_u.mutation.ClearProductionDate()
+	return _u
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (_u *EntityUpdate) SetShelfLifeDays(v int) *EntityUpdate {
+	_u.mutation.ResetShelfLifeDays()
+	_u.mutation.SetShelfLifeDays(v)
+	return _u
+}
+
+// SetNillableShelfLifeDays sets the "shelf_life_days" field if the given value is not nil.
+func (_u *EntityUpdate) SetNillableShelfLifeDays(v *int) *EntityUpdate {
+	if v != nil {
+		_u.SetShelfLifeDays(*v)
+	}
+	return _u
+}
+
+// AddShelfLifeDays adds value to the "shelf_life_days" field.
+func (_u *EntityUpdate) AddShelfLifeDays(v int) *EntityUpdate {
+	_u.mutation.AddShelfLifeDays(v)
+	return _u
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (_u *EntityUpdate) ClearShelfLifeDays() *EntityUpdate {
+	_u.mutation.ClearShelfLifeDays()
+	return _u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_u *EntityUpdate) SetExpiryDate(v time.Time) *EntityUpdate {
+	_u.mutation.SetExpiryDate(v)
+	return _u
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_u *EntityUpdate) SetNillableExpiryDate(v *time.Time) *EntityUpdate {
+	if v != nil {
+		_u.SetExpiryDate(*v)
+	}
+	return _u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (_u *EntityUpdate) ClearExpiryDate() *EntityUpdate {
+	_u.mutation.ClearExpiryDate()
+	return _u
+}
+
 // SetPurchaseDate sets the "purchase_date" field.
 func (_u *EntityUpdate) SetPurchaseDate(v time.Time) *EntityUpdate {
 	_u.mutation.SetPurchaseDate(v)
@@ -933,6 +1000,27 @@ func (_u *EntityUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.WarrantyDetailsCleared() {
 		_spec.ClearField(entity.FieldWarrantyDetails, field.TypeString)
+	}
+	if value, ok := _u.mutation.ProductionDate(); ok {
+		_spec.SetField(entity.FieldProductionDate, field.TypeTime, value)
+	}
+	if _u.mutation.ProductionDateCleared() {
+		_spec.ClearField(entity.FieldProductionDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ShelfLifeDays(); ok {
+		_spec.SetField(entity.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedShelfLifeDays(); ok {
+		_spec.AddField(entity.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if _u.mutation.ShelfLifeDaysCleared() {
+		_spec.ClearField(entity.FieldShelfLifeDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ExpiryDate(); ok {
+		_spec.SetField(entity.FieldExpiryDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryDateCleared() {
+		_spec.ClearField(entity.FieldExpiryDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.PurchaseDate(); ok {
 		_spec.SetField(entity.FieldPurchaseDate, field.TypeTime, value)
@@ -1627,6 +1715,73 @@ func (_u *EntityUpdateOne) ClearWarrantyDetails() *EntityUpdateOne {
 	return _u
 }
 
+// SetProductionDate sets the "production_date" field.
+func (_u *EntityUpdateOne) SetProductionDate(v time.Time) *EntityUpdateOne {
+	_u.mutation.SetProductionDate(v)
+	return _u
+}
+
+// SetNillableProductionDate sets the "production_date" field if the given value is not nil.
+func (_u *EntityUpdateOne) SetNillableProductionDate(v *time.Time) *EntityUpdateOne {
+	if v != nil {
+		_u.SetProductionDate(*v)
+	}
+	return _u
+}
+
+// ClearProductionDate clears the value of the "production_date" field.
+func (_u *EntityUpdateOne) ClearProductionDate() *EntityUpdateOne {
+	_u.mutation.ClearProductionDate()
+	return _u
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (_u *EntityUpdateOne) SetShelfLifeDays(v int) *EntityUpdateOne {
+	_u.mutation.ResetShelfLifeDays()
+	_u.mutation.SetShelfLifeDays(v)
+	return _u
+}
+
+// SetNillableShelfLifeDays sets the "shelf_life_days" field if the given value is not nil.
+func (_u *EntityUpdateOne) SetNillableShelfLifeDays(v *int) *EntityUpdateOne {
+	if v != nil {
+		_u.SetShelfLifeDays(*v)
+	}
+	return _u
+}
+
+// AddShelfLifeDays adds value to the "shelf_life_days" field.
+func (_u *EntityUpdateOne) AddShelfLifeDays(v int) *EntityUpdateOne {
+	_u.mutation.AddShelfLifeDays(v)
+	return _u
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (_u *EntityUpdateOne) ClearShelfLifeDays() *EntityUpdateOne {
+	_u.mutation.ClearShelfLifeDays()
+	return _u
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_u *EntityUpdateOne) SetExpiryDate(v time.Time) *EntityUpdateOne {
+	_u.mutation.SetExpiryDate(v)
+	return _u
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_u *EntityUpdateOne) SetNillableExpiryDate(v *time.Time) *EntityUpdateOne {
+	if v != nil {
+		_u.SetExpiryDate(*v)
+	}
+	return _u
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (_u *EntityUpdateOne) ClearExpiryDate() *EntityUpdateOne {
+	_u.mutation.ClearExpiryDate()
+	return _u
+}
+
 // SetPurchaseDate sets the "purchase_date" field.
 func (_u *EntityUpdateOne) SetPurchaseDate(v time.Time) *EntityUpdateOne {
 	_u.mutation.SetPurchaseDate(v)
@@ -2236,6 +2391,27 @@ func (_u *EntityUpdateOne) sqlSave(ctx context.Context) (_node *Entity, err erro
 	}
 	if _u.mutation.WarrantyDetailsCleared() {
 		_spec.ClearField(entity.FieldWarrantyDetails, field.TypeString)
+	}
+	if value, ok := _u.mutation.ProductionDate(); ok {
+		_spec.SetField(entity.FieldProductionDate, field.TypeTime, value)
+	}
+	if _u.mutation.ProductionDateCleared() {
+		_spec.ClearField(entity.FieldProductionDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ShelfLifeDays(); ok {
+		_spec.SetField(entity.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedShelfLifeDays(); ok {
+		_spec.AddField(entity.FieldShelfLifeDays, field.TypeInt, value)
+	}
+	if _u.mutation.ShelfLifeDaysCleared() {
+		_spec.ClearField(entity.FieldShelfLifeDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.ExpiryDate(); ok {
+		_spec.SetField(entity.FieldExpiryDate, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryDateCleared() {
+		_spec.ClearField(entity.FieldExpiryDate, field.TypeTime)
 	}
 	if value, ok := _u.mutation.PurchaseDate(); ok {
 		_spec.SetField(entity.FieldPurchaseDate, field.TypeTime, value)

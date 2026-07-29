@@ -652,6 +652,12 @@ const docTemplate = `{
                         "description": "parent Ids",
                         "name": "parentIds",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "only items whose expiry date falls within the next N days",
+                        "name": "expiringWithinDays",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4310,6 +4316,10 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "expiry_date": {
+                    "description": "ExpiryDate holds the value of the \"expiry_date\" field.",
+                    "type": "string"
+                },
                 "id": {
                     "description": "ID of the ent.",
                     "type": "string"
@@ -4350,6 +4360,10 @@ const docTemplate = `{
                     "description": "Notes holds the value of the \"notes\" field.",
                     "type": "string"
                 },
+                "production_date": {
+                    "description": "ProductionDate holds the value of the \"production_date\" field.",
+                    "type": "string"
+                },
                 "purchase_date": {
                     "description": "PurchaseDate holds the value of the \"purchase_date\" field.",
                     "type": "string"
@@ -4369,6 +4383,10 @@ const docTemplate = `{
                 "serial_number": {
                     "description": "SerialNumber holds the value of the \"serial_number\" field.",
                     "type": "string"
+                },
+                "shelf_life_days": {
+                    "description": "ShelfLifeDays holds the value of the \"shelf_life_days\" field.",
+                    "type": "integer"
                 },
                 "sold_date": {
                     "description": "SoldDate holds the value of the \"sold_date\" field.",
@@ -5687,6 +5705,9 @@ const docTemplate = `{
                 "entityTypeId": {
                     "type": "string"
                 },
+                "expiryDate": {
+                    "type": "string"
+                },
                 "manufacturer": {
                     "type": "string",
                     "maxLength": 255,
@@ -5709,8 +5730,17 @@ const docTemplate = `{
                     "type": "string",
                     "x-nullable": true
                 },
+                "productionDate": {
+                    "description": "Expiry — optional; expiry_date is derived from production_date +\nshelf_life_days (or vice versa) when only two of the three are set.",
+                    "type": "string"
+                },
                 "quantity": {
                     "type": "number"
+                },
+                "shelfLifeDays": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "tagIds": {
                     "description": "Edges",
@@ -5805,6 +5835,9 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
+                "expiryDate": {
+                    "type": "string"
+                },
                 "fields": {
                     "type": "array",
                     "items": {
@@ -5872,6 +5905,10 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
+                "productionDate": {
+                    "description": "Expiry",
+                    "type": "string"
+                },
                 "purchaseDate": {
                     "description": "Purchase",
                     "type": "string"
@@ -5887,6 +5924,11 @@ const docTemplate = `{
                 },
                 "serialNumber": {
                     "type": "string"
+                },
+                "shelfLifeDays": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "soldDate": {
                     "description": "Sold",
@@ -6010,6 +6052,9 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
+                "expiryDate": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -6047,11 +6092,20 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
+                "productionDate": {
+                    "description": "Expiry",
+                    "type": "string"
+                },
                 "purchasePrice": {
                     "type": "number"
                 },
                 "quantity": {
                     "type": "number"
+                },
+                "shelfLifeDays": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "soldDate": {
                     "description": "Sale details",
@@ -6435,6 +6489,9 @@ const docTemplate = `{
                 "entityTypeId": {
                     "type": "string"
                 },
+                "expiryDate": {
+                    "type": "string"
+                },
                 "fields": {
                     "type": "array",
                     "items": {
@@ -6477,6 +6534,10 @@ const docTemplate = `{
                     "x-nullable": true,
                     "x-omitempty": true
                 },
+                "productionDate": {
+                    "description": "Expiry — zero date / nil shelf life clears the column",
+                    "type": "string"
+                },
                 "purchaseDate": {
                     "description": "Purchase",
                     "type": "string"
@@ -6496,6 +6557,11 @@ const docTemplate = `{
                 "serialNumber": {
                     "description": "Identifications",
                     "type": "string"
+                },
+                "shelfLifeDays": {
+                    "type": "integer",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "soldDate": {
                     "description": "Sold",
@@ -7211,6 +7277,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "expiry_date": {
+                    "type": "string"
+                },
                 "keyword": {
                     "type": "string"
                 },
@@ -7223,8 +7292,15 @@ const docTemplate = `{
                 "parent_path": {
                     "type": "string"
                 },
+                "production_date": {
+                    "description": "Expiry fields for create_item: dates as YYYY-MM-DD, shelf life in days.",
+                    "type": "string"
+                },
                 "quantity": {
                     "type": "number"
+                },
+                "shelf_life_days": {
+                    "type": "integer"
                 },
                 "type": {
                     "type": "string"
@@ -7234,6 +7310,9 @@ const docTemplate = `{
         "services.EntityAIBatchItem": {
             "type": "object",
             "properties": {
+                "expiryDate": {
+                    "type": "string"
+                },
                 "locationId": {
                     "type": "string"
                 },
@@ -7243,8 +7322,15 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "productionDate": {
+                    "description": "Expiry fields: dates as YYYY-MM-DD (empty when not mentioned), shelf\nlife in days.",
+                    "type": "string"
+                },
                 "quantity": {
                     "type": "number"
+                },
+                "shelfLifeDays": {
+                    "type": "integer"
                 }
             }
         },
@@ -7279,11 +7365,21 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "expiryDate": {
+                    "type": "string"
+                },
                 "name": {
+                    "type": "string"
+                },
+                "productionDate": {
+                    "description": "Expiry fields read from the packaging: dates as YYYY-MM-DD (empty when\nnot legible), shelf life in days.",
                     "type": "string"
                 },
                 "quantity": {
                     "type": "number"
+                },
+                "shelfLifeDays": {
+                    "type": "integer"
                 },
                 "suggestedLocationId": {
                     "type": "string"

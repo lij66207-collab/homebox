@@ -34,6 +34,14 @@
             </NuxtLink>
           </Badge>
         </div>
+        <div v-if="expiryBadge" class="absolute right-1 top-1 z-10">
+          <Badge v-if="expiryBadge.status === 'expired'" variant="destructive">
+            {{ $t("items.expired") }}
+          </Badge>
+          <Badge v-else class="border-transparent bg-orange-500 text-white hover:bg-orange-500/80">
+            {{ $t("items.near_expiry", { days: expiryBadge.days }) }}
+          </Badge>
+        </div>
       </div>
       <div class="col-span-4 flex grow flex-col gap-y-1 p-4 pt-2">
         <h2 class="line-clamp-2 text-ellipsis text-wrap text-lg font-bold">{{ item.name }}</h2>
@@ -93,6 +101,12 @@
 
   const api = useUserApi();
   const preferences = useViewPreferences();
+  const { threshold: expiryThreshold } = useExpiryThreshold();
+
+  const expiryBadge = computed(() => {
+    const result = expiryStatus(props.item.expiryDate, expiryThreshold.value);
+    return result && result.status !== "ok" ? result : null;
+  });
 
   const imageUrl = computed(() => {
     if (!props.item.imageId) {

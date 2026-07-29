@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -85,6 +87,11 @@ type EntityAISuggestion struct {
 	SuggestedTagIDs     []string `json:"suggestedTagIds"`
 	SuggestedLocationID *string  `json:"suggestedLocationId"`
 	Confidence          float64  `json:"confidence"`
+	// Expiry fields read from the packaging: dates as YYYY-MM-DD (empty when
+	// not legible), shelf life in days.
+	ProductionDate string `json:"productionDate,omitempty"`
+	ShelfLifeDays  *int   `json:"shelfLifeDays,omitempty"`
+	ExpiryDate     string `json:"expiryDate,omitempty"`
 }
 
 // EntityAIBatchItem is one parsed entry from a free-form batch inventory
@@ -96,6 +103,11 @@ type EntityAIBatchItem struct {
 	Quantity     float64 `json:"quantity"`
 	LocationID   *string `json:"locationId"`
 	LocationName string  `json:"locationName"`
+	// Expiry fields: dates as YYYY-MM-DD (empty when not mentioned), shelf
+	// life in days.
+	ProductionDate string `json:"productionDate,omitempty"`
+	ShelfLifeDays  *int   `json:"shelfLifeDays,omitempty"`
+	ExpiryDate     string `json:"expiryDate,omitempty"`
 }
 
 // EntityAIBatchResult is the outcome of parsing a batch inventory text.
@@ -165,6 +177,9 @@ type (
 		SuggestedTagIDs     []string `json:"suggestedTagIds"`
 		SuggestedLocationID *string  `json:"suggestedLocationId"`
 		Confidence          *float64 `json:"confidence"`
+		ProductionDate      *string  `json:"productionDate"`
+		ShelfLifeDays       *int     `json:"shelfLifeDays"`
+		ExpiryDate          *string  `json:"expiryDate"`
 	}
 )
 
@@ -463,7 +478,7 @@ func buildAISystemPrompt(candidates aiCandidates, language string) string {
 
 	sb.WriteString(`You are analyzing a photo of a household item for a home-inventory app.
 Reply with ONLY a JSON object (no markdown, no prose, no code fences) of this exact shape:
-{"name": string, "description": string, "quantity": number, "suggestedTagIds": [string], "suggestedLocationId": string|null, "confidence": number}
+{"name": string, "description": string, "quantity": number, "suggestedTagIds": [string], "suggestedLocationId": string|null, "confidence": number, "productionDate": string|null, "shelfLifeDays": number|null, "expiryDate": string|null}
 
 Rules:
 - "name" is a short item name; "description" is one or two sentences about the item.
@@ -472,6 +487,7 @@ Rules:
 - "suggestedTagIds" must be chosen ONLY from the candidate tag ids below (use [] if none fit).
 - "suggestedLocationId" must be chosen ONLY from the candidate location ids below, or null if none fit.
 - "confidence" is your confidence in the overall suggestion, between 0 and 1.
+- Read the packaging for 生产日期/保质期/截止日期 (production date / shelf life / expiry date) when visible: "productionDate" and "expiryDate" are dates in YYYY-MM-DD format with zero-padded month and day (e.g. 2026-07-01, never 2026-7-1), "shelfLifeDays" is the shelf life as an integer number of days (convert durations like "12个月"/"一年" to days: 1 year = 365 days, 1 month = 30 days). Use null when not legible.
 
 Candidate tags (id: name):
 `)
@@ -506,14 +522,19 @@ func buildAIBatchPrompt(locations []aiCandidate, language string) string {
 	sb.WriteString(`You are parsing a free-form inventory list for a home-inventory app.
 The user text names household items and may say which location each item belongs to.
 Reply with ONLY a JSON object (no markdown, no prose, no code fences) of this exact shape:
-{"items":[{"name": string, "quantity": number, "location": string|null}]}
+{"items":[{"name": string, "quantity": number, "location": string|null, "production_date": string|null, "shelf_life_days": number|null, "expiry_date": string|null}]}
 
 Rules:
 - Split the text into individual items; one array entry per item.
 - "name" is a short item name in ` + language + `.
 - "quantity" is the count for that item; use 1 when unspecified; never below 1.
 - "location" must be copied EXACTLY from the candidate location names below, or null when the text names no location or no candidate fits.
+- "production_date" (生产日期) and "expiry_date" (截止日期) are dates in YYYY-MM-DD format with zero-padded month and day (e.g. 2026-07-01, never 2026-7-1), null when not mentioned.
+- "shelf_life_days" (保质期) is the shelf life as an integer number of days; convert durations like "12个月"/"一年" to days (1 year = 365 days, 1 month = 30 days); null when not mentioned.
 - Do not invent items that are not mentioned in the text.
+
+Example: for the input "牛奶2盒放冰箱，生产日期2026年7月1日，保质期到2026年7月15日" (with 冰箱 among the candidate locations), reply:
+{"items":[{"name":"牛奶","quantity":2,"location":"冰箱","production_date":"2026-07-01","shelf_life_days":14,"expiry_date":"2026-07-15"}]}
 
 Candidate locations:
 `)
@@ -539,9 +560,12 @@ func parseAIBatch(content string, locations []aiCandidate) (EntityAIBatchResult,
 
 	var parsed struct {
 		Items []struct {
-			Name     string   `json:"name"`
-			Quantity *float64 `json:"quantity"`
-			Location *string  `json:"location"`
+			Name           string   `json:"name"`
+			Quantity       *float64 `json:"quantity"`
+			Location       *string  `json:"location"`
+			ProductionDate *string  `json:"production_date"`
+			ShelfLifeDays  *int     `json:"shelf_life_days"`
+			ExpiryDate     *string  `json:"expiry_date"`
 		} `json:"items"`
 	}
 	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
@@ -575,6 +599,17 @@ func parseAIBatch(content string, locations []aiCandidate) (EntityAIBatchResult,
 				locID := id
 				item.LocationID = &locID
 			}
+		}
+
+		if d := validAIDate(it.ProductionDate); d != "" {
+			item.ProductionDate = d
+		}
+		if it.ShelfLifeDays != nil && *it.ShelfLifeDays > 0 {
+			days := *it.ShelfLifeDays
+			item.ShelfLifeDays = &days
+		}
+		if d := validAIDate(it.ExpiryDate); d != "" {
+			item.ExpiryDate = d
 		}
 
 		out.Items = append(out.Items, item)
@@ -731,7 +766,46 @@ func parseAISuggestion(content string, candidates aiCandidates) (EntityAISuggest
 		suggestion.Confidence = min(max(*parsed.Confidence, 0), 1)
 	}
 
+	if d := validAIDate(parsed.ProductionDate); d != "" {
+		suggestion.ProductionDate = d
+	}
+	if parsed.ShelfLifeDays != nil && *parsed.ShelfLifeDays > 0 {
+		days := *parsed.ShelfLifeDays
+		suggestion.ShelfLifeDays = &days
+	}
+	if d := validAIDate(parsed.ExpiryDate); d != "" {
+		suggestion.ExpiryDate = d
+	}
+
 	return suggestion, nil
+}
+
+// aiDatePattern matches the date variants LLMs commonly emit: a 4-digit year,
+// a 1-2 digit month and day, separated by "-", "/", "." or the CJK 年/月
+// characters, with an optional trailing 日. Month/day are zero-padded on
+// output.
+var aiDatePattern = regexp.MustCompile(`^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})日?$`)
+
+// validAIDate normalizes an AI-returned date string to canonical YYYY-MM-DD.
+// It tolerates the usual LLM variants ("2026-07-29", "2026/7/29", "2026.7.29",
+// "2026年7月29日"); null, empty, malformed, or out-of-range values are dropped
+// ("" returned).
+func validAIDate(s *string) string {
+	if s == nil {
+		return ""
+	}
+	m := aiDatePattern.FindStringSubmatch(strings.TrimSpace(*s))
+	if m == nil {
+		return ""
+	}
+	year, _ := strconv.Atoi(m[1])
+	month, _ := strconv.Atoi(m[2])
+	day, _ := strconv.Atoi(m[3])
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	if t.Year() != year || int(t.Month()) != month || t.Day() != day {
+		return ""
+	}
+	return t.Format("2006-01-02")
 }
 
 func truncateAIString(s string, n int) string {

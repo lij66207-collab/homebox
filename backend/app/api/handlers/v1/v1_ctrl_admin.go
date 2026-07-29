@@ -210,7 +210,7 @@ func (ctrl *V1Controller) HandleAdminUsersResetLink() errchain.HandlerFunc {
 //	@Summary	Set a user's password directly (superuser only)
 //	@Tags		Admin
 //	@Accept		json
-//	@Param		id		path	string						true	"User ID"
+//	@Param		id		path	string					true	"User ID"
 //	@Param		payload	body	AdminSetPasswordRequest	true	"New password"
 //	@Success	204
 //	@Failure	400	{string}	string	"Password too short"

@@ -53,6 +53,12 @@ const (
 	FieldWarrantyExpires = "warranty_expires"
 	// FieldWarrantyDetails holds the string denoting the warranty_details field in the database.
 	FieldWarrantyDetails = "warranty_details"
+	// FieldProductionDate holds the string denoting the production_date field in the database.
+	FieldProductionDate = "production_date"
+	// FieldShelfLifeDays holds the string denoting the shelf_life_days field in the database.
+	FieldShelfLifeDays = "shelf_life_days"
+	// FieldExpiryDate holds the string denoting the expiry_date field in the database.
+	FieldExpiryDate = "expiry_date"
 	// FieldPurchaseDate holds the string denoting the purchase_date field in the database.
 	FieldPurchaseDate = "purchase_date"
 	// FieldPurchaseFrom holds the string denoting the purchase_from field in the database.
@@ -157,6 +163,9 @@ var Columns = []string{
 	FieldLifetimeWarranty,
 	FieldWarrantyExpires,
 	FieldWarrantyDetails,
+	FieldProductionDate,
+	FieldShelfLifeDays,
+	FieldExpiryDate,
 	FieldPurchaseDate,
 	FieldPurchaseFrom,
 	FieldPurchasePrice,
@@ -343,6 +352,21 @@ func ByWarrantyExpires(opts ...sql.OrderTermOption) OrderOption {
 // ByWarrantyDetails orders the results by the warranty_details field.
 func ByWarrantyDetails(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWarrantyDetails, opts...).ToFunc()
+}
+
+// ByProductionDate orders the results by the production_date field.
+func ByProductionDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProductionDate, opts...).ToFunc()
+}
+
+// ByShelfLifeDays orders the results by the shelf_life_days field.
+func ByShelfLifeDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShelfLifeDays, opts...).ToFunc()
+}
+
+// ByExpiryDate orders the results by the expiry_date field.
+func ByExpiryDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryDate, opts...).ToFunc()
 }
 
 // ByPurchaseDate orders the results by the purchase_date field.

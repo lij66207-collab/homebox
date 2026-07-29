@@ -1,0 +1,34 @@
+---
+title: OpenClaw Integration
+---
+
+## Overview
+
+[OpenClaw](https://github.com/openclaw/openclaw) (Chinese nickname 龙虾, formerly Clawdbot / Moltbot) is a personal AI assistant gateway. Homebox ships an OpenClaw skill that lets the assistant record items into your inventory and query near-expiry items through the REST API — for example, "把牛奶录进冰箱，生产日期今天，保质期7天" ("put the milk in the fridge, produced today, 7-day shelf life").
+
+The integration lives in the repository at [`integrations/openclaw/`](https://github.com/sysadminsmedia/homebox/tree/main/integrations/openclaw):
+
+- `SKILL.md` — the OpenClaw skill definition (YAML frontmatter + agent instructions with verified `curl` examples).
+- `README.md` — Chinese-language setup guide.
+
+## How It Works
+
+The skill talks to the [Homebox API](/api/) with a user API token:
+
+1. **Resolve locations** — locations are entities whose entity type has `isLocation=true`. The skill lists them via `GET /api/v1/entities?isLocation=true`, matches by name, and creates a missing one with `POST /api/v1/entities` using the location entity type.
+2. **Create items** — `POST /api/v1/entities` with `name`, `quantity`, `parentId` (the location), optional `tagIds`, and optional expiry fields `productionDate`, `shelfLifeDays`, `expiryDate` (all dates are `YYYY-MM-DD`). When a production date plus either shelf life or expiry date is given, the server derives the missing value.
+3. **Query near-expiry items** — `GET /api/v1/entities?expiringWithinDays=30` returns items expiring within the next 30 days.
+
+## Setup
+
+1. In the Homebox web UI, open your **Profile** page and create an **API Key**. Copy it immediately — it is shown only once.
+2. Configure the OpenClaw environment:
+   - `HBOX_BASE_URL` — your Homebox address, e.g. `http://localhost:7745` (no trailing slash, no `/api` suffix).
+   - `HBOX_API_TOKEN` — the API key from step 1.
+3. Copy or symlink `integrations/openclaw/SKILL.md` into your OpenClaw skills directory and reload OpenClaw.
+
+API keys authenticate via the `Authorization: Bearer <token>` header. Note that API keys are only accepted through the `Authorization` header — never through cookies or query parameters.
+
+:::tip
+Step-by-step instructions (in Chinese), including voice/chat usage phrases and troubleshooting for 401 and connectivity errors, are in the [integration README](https://github.com/sysadminsmedia/homebox/tree/main/integrations/openclaw/README.md).
+:::

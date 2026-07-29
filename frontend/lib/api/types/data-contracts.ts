@@ -241,6 +241,8 @@ export interface EntEntity {
    * The values are being populated by the EntityQuery when eager-loading is set.
    */
   edges: EntEntityEdges;
+  /** ExpiryDate holds the value of the "expiry_date" field. */
+  expiry_date: Date | string;
   /** ID of the ent. */
   id: string;
   /** ImportRef holds the value of the "import_ref" field. */
@@ -261,6 +263,8 @@ export interface EntEntity {
   name: string;
   /** Notes holds the value of the "notes" field. */
   notes: string;
+  /** ProductionDate holds the value of the "production_date" field. */
+  production_date: Date | string;
   /** PurchaseDate holds the value of the "purchase_date" field. */
   purchase_date: Date | string;
   /** PurchaseFrom holds the value of the "purchase_from" field. */
@@ -271,6 +275,8 @@ export interface EntEntity {
   quantity: number;
   /** SerialNumber holds the value of the "serial_number" field. */
   serial_number: string;
+  /** ShelfLifeDays holds the value of the "shelf_life_days" field. */
+  shelf_life_days: number;
   /** SoldDate holds the value of the "sold_date" field. */
   sold_date: Date | string;
   /** SoldNotes holds the value of the "sold_notes" field. */
@@ -816,6 +822,7 @@ export interface EntityCreate {
   /** @maxLength 1000 */
   description: string;
   entityTypeId: string;
+  expiryDate: string;
   /** @maxLength 255 */
   manufacturer?: string | null;
   /**
@@ -830,7 +837,13 @@ export interface EntityCreate {
    */
   name: string;
   parentId?: string | null;
+  /**
+   * Expiry — optional; expiry_date is derived from production_date +
+   * shelf_life_days (or vice versa) when only two of the three are set.
+   */
+  productionDate: string;
   quantity: number;
+  shelfLifeDays?: number | null;
   /** Edges */
   tagIds: string[];
 }
@@ -862,6 +875,7 @@ export interface EntityOut {
   createdAt: Date | string;
   description: string;
   entityType?: EntityTypeSummary | null;
+  expiryDate: string;
   fields: EntityFieldData[];
   id: string;
   imageId?: string | null;
@@ -887,12 +901,15 @@ export interface EntityOut {
   notes: string;
   /** Edges */
   parent?: EntitySummary | null;
+  /** Expiry */
+  productionDate: string;
   /** Purchase */
   purchaseDate: Date | string;
   purchaseFrom: string;
   purchasePrice: number;
   quantity: number;
   serialNumber: string;
+  shelfLifeDays?: number | null;
   /** Sold */
   soldDate: Date | string;
   soldNotes: string;
@@ -928,6 +945,7 @@ export interface EntitySummary {
   createdAt: Date | string;
   description: string;
   entityType?: EntityTypeSummary | null;
+  expiryDate: string;
   id: string;
   imageId?: string | null;
   insured: boolean;
@@ -939,8 +957,11 @@ export interface EntitySummary {
   name: string;
   /** Edges */
   parent?: EntitySummary | null;
+  /** Expiry */
+  productionDate: string;
   purchasePrice: number;
   quantity: number;
+  shelfLifeDays?: number | null;
   /** Sale details */
   soldDate: Date | string;
   tags: TagSummary[];
@@ -1087,6 +1108,7 @@ export interface EntityUpdate {
   /** @maxLength 1000 */
   description: string;
   entityTypeId: string;
+  expiryDate: string;
   fields: EntityFieldData[];
   id: string;
   insured: boolean;
@@ -1104,6 +1126,8 @@ export interface EntityUpdate {
   /** Extras */
   notes: string;
   parentId?: string | null;
+  /** Expiry — zero date / nil shelf life clears the column */
+  productionDate: string;
   /** Purchase */
   purchaseDate: Date | string;
   /** @maxLength 255 */
@@ -1112,6 +1136,7 @@ export interface EntityUpdate {
   quantity: number;
   /** Identifications */
   serialNumber: string;
+  shelfLifeDays?: number | null;
   /** Sold */
   soldDate: Date | string;
   soldNotes: string;
@@ -1400,19 +1425,30 @@ export interface ValueOverTimeEntry {
 
 export interface AssistantAction {
   description: string;
+  expiry_date: Date | string;
   keyword: string;
   location_path: string;
   name: string;
   parent_path: string;
+  /** Expiry fields for create_item: dates as YYYY-MM-DD, shelf life in days. */
+  production_date: Date | string;
   quantity: number;
+  shelf_life_days: number;
   type: string;
 }
 
 export interface EntityAIBatchItem {
+  expiryDate: string;
   locationId: string;
   locationName: string;
   name: string;
+  /**
+   * Expiry fields: dates as YYYY-MM-DD (empty when not mentioned), shelf
+   * life in days.
+   */
+  productionDate: string;
   quantity: number;
+  shelfLifeDays: number;
 }
 
 export interface EntityAIBatchResult {
@@ -1426,8 +1462,15 @@ export interface EntityAISearchResult {
 export interface EntityAISuggestion {
   confidence: number;
   description: string;
+  expiryDate: string;
   name: string;
+  /**
+   * Expiry fields read from the packaging: dates as YYYY-MM-DD (empty when
+   * not legible), shelf life in days.
+   */
+  productionDate: string;
   quantity: number;
+  shelfLifeDays: number;
   suggestedLocationId: string;
   suggestedTagIds: string[];
 }

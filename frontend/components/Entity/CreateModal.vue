@@ -219,6 +219,27 @@
         :max-length="1000"
       />
       <TagSelector v-model="form.tags" :tags="tags ?? []" />
+      <div v-if="!selectedEntityType?.isLocation" class="rounded-lg border p-3">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between text-sm font-medium"
+          @click="showExpiry = !showExpiry"
+        >
+          <span>{{ $t("items.expiry_details") }}</span>
+          <MdiChevronDown class="size-4 transition-transform" :class="{ 'rotate-180': showExpiry }" />
+        </button>
+        <div v-if="showExpiry" class="mt-3 flex flex-col gap-2">
+          <FormDatePicker v-model="form.productionDate" :label="$t('items.production_date')" date-only />
+          <FormTextField
+            v-model.number="shelfLifeInput"
+            type="number"
+            step="any"
+            :min="0"
+            :label="$t('items.shelf_life_days')"
+          />
+          <FormDatePicker v-model="form.expiryDate" :label="$t('items.expiry_date')" date-only />
+        </div>
+      </div>
       <div class="flex items-end gap-2">
         <PhotoUploader
           class="grow"
@@ -294,13 +315,35 @@
       </div>
 
       <div v-if="batchParsed" class="flex flex-col gap-2">
-        <div v-for="(row, idx) in batchRows" :key="idx" class="flex items-center gap-2">
+        <div v-for="(row, idx) in batchRows" :key="idx" class="flex flex-wrap items-center gap-2">
           <Input v-model="row.name" class="grow" :aria-label="$t('components.entity.create_modal.batch_col_name')" />
           <Input v-model.number="row.quantity" type="number" min="1" class="w-20" />
           <select v-model="row.locationId" class="h-9 max-w-32 truncate rounded-md border bg-background px-2 text-sm">
             <option :value="null">{{ $t("components.entity.create_modal.batch_no_location") }}</option>
             <option v-for="loc in locations" :key="loc.id" :value="loc.id">{{ loc.name }}</option>
           </select>
+          <Input
+            v-model="row.productionDate"
+            type="date"
+            class="w-36"
+            :aria-label="$t('items.production_date')"
+            @change="deriveBatchRow(row)"
+          />
+          <Input
+            v-model.number="row.shelfLifeDays"
+            type="number"
+            min="0"
+            class="w-24"
+            :aria-label="$t('items.shelf_life_days')"
+            @change="deriveBatchRow(row)"
+          />
+          <Input
+            v-model="row.expiryDate"
+            type="date"
+            class="w-36"
+            :aria-label="$t('items.expiry_date')"
+            @change="deriveBatchRow(row)"
+          />
           <Button
             type="button"
             variant="ghost"
@@ -361,6 +404,7 @@
   import LocationSelector from "~/components/Location/Selector.vue";
   import FormTextField from "~/components/Form/TextField.vue";
   import FormTextArea from "~/components/Form/TextArea.vue";
+  import FormDatePicker from "~/components/Form/DatePicker.vue";
   import PhotoUploader from "~/components/Form/PhotoUploader.vue";
   import PhotoUploaderPreview from "~/components/Form/PhotoUploaderPreview.vue";
   import {
@@ -422,6 +466,10 @@
     if (data.name) form.name = data.name;
     if (data.description) form.description = data.description;
     if (data.quantity && data.quantity > 0) form.quantity = data.quantity;
+    if (data.productionDate) form.productionDate = data.productionDate;
+    if (data.shelfLifeDays && data.shelfLifeDays > 0) form.shelfLifeDays = data.shelfLifeDays;
+    if (data.expiryDate) form.expiryDate = data.expiryDate;
+    if (data.productionDate || data.expiryDate || data.shelfLifeDays) showExpiry.value = true;
     if (data.suggestedTagIds && data.suggestedTagIds.length > 0) {
       form.tags = [...new Set([...form.tags, ...data.suggestedTagIds])];
     }
@@ -442,6 +490,9 @@
     quantity: number;
     locationId: string | null;
     locationName: string;
+    productionDate: string;
+    shelfLifeDays: number | undefined;
+    expiryDate: string;
   }
 
   const batchMode = ref(false);
@@ -473,17 +524,34 @@
       return;
     }
 
-    batchRows.value = (data.items ?? []).map(i => ({
-      name: i.name,
-      quantity: i.quantity && i.quantity > 0 ? i.quantity : 1,
-      locationId: i.locationId || null,
-      locationName: i.locationName || "",
-    }));
+    batchRows.value = (data.items ?? []).map(i => {
+      const row: BatchRow = {
+        name: i.name,
+        quantity: i.quantity && i.quantity > 0 ? i.quantity : 1,
+        locationId: i.locationId || null,
+        locationName: i.locationName || "",
+        productionDate: i.productionDate || "",
+        shelfLifeDays: i.shelfLifeDays && i.shelfLifeDays > 0 ? i.shelfLifeDays : undefined,
+        expiryDate: i.expiryDate || "",
+      };
+      // Fill in whichever expiry field the AI left out (e.g. production+expiry
+      // -> shelf life days) so the review table shows the complete trio.
+      deriveBatchRow(row);
+      return row;
+    });
     batchParsed.value = true;
 
     if (batchRows.value.length === 0) {
       toast.error(t("components.entity.create_modal.toast.batch_empty"));
     }
+  }
+
+  // Derives the missing member of the row's expiry trio (productionDate +
+  // shelfLifeDays <-> expiryDate), mirroring useExpiryFields.
+  function deriveBatchRow(row: BatchRow) {
+    const derived = deriveExpiry(row.productionDate, row.shelfLifeDays, row.expiryDate);
+    row.shelfLifeDays = derived.shelfLifeDays ?? undefined;
+    row.expiryDate = derived.expiryDate;
   }
 
   function removeBatchRow(idx: number) {
@@ -510,6 +578,9 @@
         quantity: row.quantity >= 1 ? row.quantity : 1,
         tagIds: [],
         entityTypeId: et.id,
+        productionDate: row.productionDate || "",
+        shelfLifeDays: typeof row.shelfLifeDays === "number" && row.shelfLifeDays > 0 ? row.shelfLifeDays : null,
+        expiryDate: row.expiryDate || "",
       });
       if (error) failed++;
       else done++;
@@ -615,6 +686,7 @@
   // auto-applied from an entity type's default template). User selections win.
   const templateUserSelected = ref(false);
   const showTemplateDetails = ref(false);
+  const showExpiry = ref(false);
   const form = reactive({
     location: locations.value && locations.value.length > 0 ? locations.value[0] : ({} as EntityOut),
     parentId: null,
@@ -625,8 +697,28 @@
     // Populated by the barcode product-import flow; passed through on create (#1578).
     manufacturer: "",
     modelNumber: "",
+    productionDate: "",
+    shelfLifeDays: null as number | null,
+    expiryDate: "",
     tags: [] as string[],
     photos: [] as PhotoPreview[],
+  });
+
+  // Live derivation between the three expiry fields (keeps updating a field
+  // until the user manually edits it; see useExpiryFields).
+  useExpiryFields({
+    productionDate: toRef(form, "productionDate"),
+    shelfLifeDays: toRef(form, "shelfLifeDays"),
+    expiryDate: toRef(form, "expiryDate"),
+  });
+
+  // Shelf life is nullable; the number input needs an empty-string
+  // representation for "not set".
+  const shelfLifeInput = computed({
+    get: () => form.shelfLifeDays ?? "",
+    set: v => {
+      form.shelfLifeDays = v === "" || v === null || Number.isNaN(Number(v)) ? null : Number(v);
+    },
   });
 
   async function handleTemplateSelected(template: EntityTemplateSummary | null) {
@@ -875,6 +967,8 @@
         entityTypeId: selectedEntityType.value?.id || "",
         quantity: 1,
         tagIds: form.tags,
+        productionDate: "",
+        expiryDate: "",
       });
       error = result.error;
       data = result.data;
@@ -901,6 +995,9 @@
         description: form.description,
         manufacturer: form.manufacturer,
         modelNumber: form.modelNumber,
+        productionDate: form.productionDate,
+        shelfLifeDays: form.shelfLifeDays,
+        expiryDate: form.expiryDate,
         tagIds: form.tags,
         entityTypeId: selectedEntityType.value?.id || "",
       };
@@ -957,12 +1054,16 @@
     form.color = "";
     form.manufacturer = "";
     form.modelNumber = "";
+    form.productionDate = "";
+    form.shelfLifeDays = null;
+    form.expiryDate = "";
     form.photos = [];
     form.tags = [];
     selectedTemplate.value = null;
     templateData.value = null;
     templateUserSelected.value = false;
     showTemplateDetails.value = false;
+    showExpiry.value = false;
     aiBanner.value = false;
     focused.value = false;
     loading.value = false;

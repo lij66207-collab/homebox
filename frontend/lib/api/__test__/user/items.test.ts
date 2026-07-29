@@ -274,4 +274,62 @@ describe("user should be able to create an item and add an attachment", () => {
     parentCleanup();
     childsCleanup();
   });
+
+  test("expiry fields are derived server-side and expiringWithinDays filters", async () => {
+    const api = await sharedUserClient();
+    const [location, cleanup] = await useLocation(api);
+
+    const { data: entityTypes } = await api.entityTypes.getAll();
+    const itemType = entityTypes.find(t => !t.isLocation);
+    expect(itemType).toBeTruthy();
+
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const now = new Date();
+    const productionDate = fmt(now);
+    const expectedExpiry = fmt(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 10));
+
+    // productionDate + shelfLifeDays -> expiryDate
+    const { response, data: item } = await api.items.create({
+      name: "expiry-item",
+      tagIds: [],
+      description: "test-description",
+      quantity: 1,
+      parentId: location.id,
+      entityTypeId: itemType!.id,
+      productionDate,
+      shelfLifeDays: 10,
+      expiryDate: "",
+    });
+    expect(response.status).toBe(201);
+    expect(item.productionDate).toBe(productionDate);
+    expect(item.expiryDate).toBe(expectedExpiry);
+
+    // productionDate + expiryDate -> shelfLifeDays
+    const itemUpdate = {
+      ...item,
+      parentId: location.id,
+      tagIds: [],
+      entityTypeId: itemType!.id,
+      productionDate,
+      shelfLifeDays: null,
+      expiryDate: expectedExpiry,
+    };
+    const { response: updateResponse, data: updated } = await api.items.update(item.id, itemUpdate as EntityUpdate);
+    expect(updateResponse.status).toBe(200);
+    expect(updated.shelfLifeDays).toBe(10);
+
+    // expiringWithinDays includes items expiring within the window...
+    const { response: listResponse, data: list } = await api.items.getAll({ expiringWithinDays: 30 });
+    expect(listResponse.status).toBe(200);
+    expect(list.items.some(i => i.id === item.id)).toBe(true);
+
+    // ...and excludes them when the window is shorter than the shelf life left
+    const { response: narrowResponse, data: narrow } = await api.items.getAll({ expiringWithinDays: 5 });
+    expect(narrowResponse.status).toBe(200);
+    expect(narrow.items.some(i => i.id === item.id)).toBe(false);
+
+    await api.items.delete(item.id);
+    await cleanup();
+  });
 });

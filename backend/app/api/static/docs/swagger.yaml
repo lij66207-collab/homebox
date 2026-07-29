@@ -262,6 +262,9 @@ definitions:
         description: |-
           Edges holds the relations/edges for other nodes in the graph.
           The values are being populated by the EntityQuery when eager-loading is set.
+      expiry_date:
+        description: ExpiryDate holds the value of the "expiry_date" field.
+        type: string
       id:
         description: ID of the ent.
         type: string
@@ -294,6 +297,9 @@ definitions:
       notes:
         description: Notes holds the value of the "notes" field.
         type: string
+      production_date:
+        description: ProductionDate holds the value of the "production_date" field.
+        type: string
       purchase_date:
         description: PurchaseDate holds the value of the "purchase_date" field.
         type: string
@@ -309,6 +315,9 @@ definitions:
       serial_number:
         description: SerialNumber holds the value of the "serial_number" field.
         type: string
+      shelf_life_days:
+        description: ShelfLifeDays holds the value of the "shelf_life_days" field.
+        type: integer
       sold_date:
         description: SoldDate holds the value of the "sold_date" field.
         type: string
@@ -1216,6 +1225,8 @@ definitions:
         type: string
       entityTypeId:
         type: string
+      expiryDate:
+        type: string
       manufacturer:
         maxLength: 255
         type: string
@@ -1236,8 +1247,17 @@ definitions:
       parentId:
         type: string
         x-nullable: true
+      productionDate:
+        description: |-
+          Expiry — optional; expiry_date is derived from production_date +
+          shelf_life_days (or vice versa) when only two of the three are set.
+        type: string
       quantity:
         type: number
+      shelfLifeDays:
+        type: integer
+        x-nullable: true
+        x-omitempty: true
       tagIds:
         description: Edges
         items:
@@ -1302,6 +1322,8 @@ definitions:
         - $ref: '#/definitions/repo.EntityTypeSummary'
         x-nullable: true
         x-omitempty: true
+      expiryDate:
+        type: string
       fields:
         items:
           $ref: '#/definitions/repo.EntityFieldData'
@@ -1352,6 +1374,9 @@ definitions:
         description: Edges
         x-nullable: true
         x-omitempty: true
+      productionDate:
+        description: Expiry
+        type: string
       purchaseDate:
         description: Purchase
         type: string
@@ -1363,6 +1388,10 @@ definitions:
         type: number
       serialNumber:
         type: string
+      shelfLifeDays:
+        type: integer
+        x-nullable: true
+        x-omitempty: true
       soldDate:
         description: Sold
         type: string
@@ -1447,6 +1476,8 @@ definitions:
         - $ref: '#/definitions/repo.EntityTypeSummary'
         x-nullable: true
         x-omitempty: true
+      expiryDate:
+        type: string
       id:
         type: string
       imageId:
@@ -1473,10 +1504,17 @@ definitions:
         description: Edges
         x-nullable: true
         x-omitempty: true
+      productionDate:
+        description: Expiry
+        type: string
       purchasePrice:
         type: number
       quantity:
         type: number
+      shelfLifeDays:
+        type: integer
+        x-nullable: true
+        x-omitempty: true
       soldDate:
         description: Sale details
         type: string
@@ -1742,6 +1780,8 @@ definitions:
         type: string
       entityTypeId:
         type: string
+      expiryDate:
+        type: string
       fields:
         items:
           $ref: '#/definitions/repo.EntityFieldData'
@@ -1773,6 +1813,9 @@ definitions:
         type: string
         x-nullable: true
         x-omitempty: true
+      productionDate:
+        description: Expiry — zero date / nil shelf life clears the column
+        type: string
       purchaseDate:
         description: Purchase
         type: string
@@ -1788,6 +1831,10 @@ definitions:
       serialNumber:
         description: Identifications
         type: string
+      shelfLifeDays:
+        type: integer
+        x-nullable: true
+        x-omitempty: true
       soldDate:
         description: Sold
         type: string
@@ -2272,6 +2319,8 @@ definitions:
     properties:
       description:
         type: string
+      expiry_date:
+        type: string
       keyword:
         type: string
       location_path:
@@ -2280,21 +2329,36 @@ definitions:
         type: string
       parent_path:
         type: string
+      production_date:
+        description: 'Expiry fields for create_item: dates as YYYY-MM-DD, shelf life
+          in days.'
+        type: string
       quantity:
         type: number
+      shelf_life_days:
+        type: integer
       type:
         type: string
     type: object
   services.EntityAIBatchItem:
     properties:
+      expiryDate:
+        type: string
       locationId:
         type: string
       locationName:
         type: string
       name:
         type: string
+      productionDate:
+        description: |-
+          Expiry fields: dates as YYYY-MM-DD (empty when not mentioned), shelf
+          life in days.
+        type: string
       quantity:
         type: number
+      shelfLifeDays:
+        type: integer
     type: object
   services.EntityAIBatchResult:
     properties:
@@ -2316,10 +2380,19 @@ definitions:
         type: number
       description:
         type: string
+      expiryDate:
+        type: string
       name:
+        type: string
+      productionDate:
+        description: |-
+          Expiry fields read from the packaging: dates as YYYY-MM-DD (empty when
+          not legible), shelf life in days.
         type: string
       quantity:
         type: number
+      shelfLifeDays:
+        type: integer
       suggestedLocationId:
         type: string
       suggestedTagIds:
@@ -3043,6 +3116,10 @@ paths:
           type: string
         name: parentIds
         type: array
+      - description: only items whose expiry date falls within the next N days
+        in: query
+        name: expiringWithinDays
+        type: integer
       produces:
       - application/json
       responses:

@@ -116,6 +116,19 @@ func setExpiryReminderSettings(t *testing.T, ns map[string]interface{}) {
 func createExpiringEntity(t *testing.T, name string, inDays int) {
 	t.Helper()
 	ctx := context.Background()
+	_, err := tRepos.Entities.Create(ctx, tGroup.ID, repo.EntityCreate{
+		Name:       name,
+		Quantity:   1,
+		ExpiryDate: types.DateFromTime(time.Now().AddDate(0, 0, inDays)),
+	})
+	require.NoError(t, err)
+}
+
+// createWarrantyOnlyEntity creates an entity whose warranty expires inDays
+// from now but which has no expiry_date — expiry reminders must ignore it.
+func createWarrantyOnlyEntity(t *testing.T, name string, inDays int) {
+	t.Helper()
+	ctx := context.Background()
 	e, err := tRepos.Entities.Create(ctx, tGroup.ID, repo.EntityCreate{Name: name, Quantity: 1})
 	require.NoError(t, err)
 	_, err = tRepos.Entities.UpdateByGroup(ctx, tGroup.ID, repo.EntityUpdate{
@@ -140,7 +153,8 @@ func TestSendExpiryReminders_SendsAggregatedMessage(t *testing.T) {
 
 	name := "expiry-" + fk.Str(6)
 	createExpiringEntity(t, name, 17)
-	createExpiringEntity(t, "expiry-other-"+fk.Str(6), 8) // not on a threshold
+	createExpiringEntity(t, "expiry-other-"+fk.Str(6), 8)       // not on a threshold
+	createWarrantyOnlyEntity(t, "warranty-only-"+fk.Str(6), 17) // expiry reminders ignore warranty_expires
 
 	require.NoError(t, tSvc.BackgroundService.SendExpiryReminders(context.Background()))
 
@@ -151,6 +165,7 @@ func TestSendExpiryReminders_SendsAggregatedMessage(t *testing.T) {
 	assert.Contains(t, pushes[0].desp, name)
 	assert.Contains(t, pushes[0].desp, "17 天")
 	assert.NotContains(t, pushes[0].desp, "expiry-other")
+	assert.NotContains(t, pushes[0].desp, "warranty-only")
 }
 
 func TestSendExpiryReminders_DisabledSendsNothing(t *testing.T) {

@@ -85,6 +85,16 @@ func (Entity) Fields() []ent.Field {
 			Optional(),
 
 		// ------------------------------------
+		// item expiry
+		field.Time("production_date").
+			Optional(),
+		field.Int("shelf_life_days").
+			Optional().
+			Nillable(),
+		field.Time("expiry_date").
+			Optional(),
+
+		// ------------------------------------
 		// item purchase
 		field.Time("purchase_date").
 			Optional(),

@@ -27,6 +27,7 @@
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb";
   import { Button } from "@/components/ui/button";
+  import { Badge } from "@/components/ui/badge";
   import { useDialog } from "@/components/ui/dialog-provider";
   import { Label } from "@/components/ui/label";
   import { Switch } from "@/components/ui/switch";
@@ -329,6 +330,52 @@
       return true;
     }
     return item.value?.lifetimeWarranty || validDate(item.value?.warrantyExpires);
+  });
+
+  const { threshold: expiryThreshold } = useExpiryThreshold();
+
+  // Near-expiry / expired badge state for the header; null when the item has
+  // no usable expiry date or is comfortably within its shelf life.
+  const expiryBadge = computed(() => {
+    const result = expiryStatus(item.value?.expiryDate, expiryThreshold.value);
+    return result && result.status !== "ok" ? result : null;
+  });
+
+  const showExpiry = computed(() => {
+    if (preferences.value.showEmpty) {
+      return true;
+    }
+    return (
+      validDate(item.value?.productionDate) || validDate(item.value?.expiryDate) || item.value?.shelfLifeDays != null
+    );
+  });
+
+  const expiryDetails = computed<Details>(() => {
+    const details: Details = [
+      {
+        name: "items.production_date",
+        text: item.value?.productionDate || "",
+        type: "date",
+        date: true,
+      },
+      {
+        name: "items.shelf_life_days",
+        text:
+          item.value?.shelfLifeDays != null ? t("items.shelf_life_days_value", { days: item.value.shelfLifeDays }) : "",
+      },
+      {
+        name: "items.expiry_date",
+        text: item.value?.expiryDate || "",
+        type: "date",
+        date: true,
+      },
+    ];
+
+    if (!preferences.value.showEmpty) {
+      return filterZeroValues(details);
+    }
+
+    return details;
   });
 
   const warrantyDetails = computed(() => {
@@ -682,6 +729,15 @@
               </h1>
               <div class="flex flex-wrap gap-2 pb-1">
                 <TagChip v-for="tag in itemTags" :key="tag.id" :tag="tag" size="sm" :ancestors="tag.ancestors" />
+                <Badge v-if="expiryBadge?.status === 'expired'" variant="destructive" class="self-center">
+                  {{ $t("items.expired") }}
+                </Badge>
+                <Badge
+                  v-else-if="expiryBadge?.status === 'near'"
+                  class="self-center border-transparent bg-orange-500 text-white hover:bg-orange-500/80"
+                >
+                  {{ $t("items.near_expiry", { days: expiryBadge.days }) }}
+                </Badge>
               </div>
               <div class="flex flex-wrap gap-1 text-wrap text-xs">
                 <div>
@@ -876,6 +932,11 @@
           <BaseCard v-if="showWarranty" collapsable>
             <template #title> {{ $t("items.warranty_details") }} </template>
             <DetailsSection :details="warrantyDetails" />
+          </BaseCard>
+
+          <BaseCard v-if="showExpiry" collapsable>
+            <template #title> {{ $t("items.expiry_details") }} </template>
+            <DetailsSection :details="expiryDetails" />
           </BaseCard>
 
           <BaseCard v-if="showSold" collapsable>

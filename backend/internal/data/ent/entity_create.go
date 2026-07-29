@@ -285,6 +285,48 @@ func (_c *EntityCreate) SetNillableWarrantyDetails(v *string) *EntityCreate {
 	return _c
 }
 
+// SetProductionDate sets the "production_date" field.
+func (_c *EntityCreate) SetProductionDate(v time.Time) *EntityCreate {
+	_c.mutation.SetProductionDate(v)
+	return _c
+}
+
+// SetNillableProductionDate sets the "production_date" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableProductionDate(v *time.Time) *EntityCreate {
+	if v != nil {
+		_c.SetProductionDate(*v)
+	}
+	return _c
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (_c *EntityCreate) SetShelfLifeDays(v int) *EntityCreate {
+	_c.mutation.SetShelfLifeDays(v)
+	return _c
+}
+
+// SetNillableShelfLifeDays sets the "shelf_life_days" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableShelfLifeDays(v *int) *EntityCreate {
+	if v != nil {
+		_c.SetShelfLifeDays(*v)
+	}
+	return _c
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (_c *EntityCreate) SetExpiryDate(v time.Time) *EntityCreate {
+	_c.mutation.SetExpiryDate(v)
+	return _c
+}
+
+// SetNillableExpiryDate sets the "expiry_date" field if the given value is not nil.
+func (_c *EntityCreate) SetNillableExpiryDate(v *time.Time) *EntityCreate {
+	if v != nil {
+		_c.SetExpiryDate(*v)
+	}
+	return _c
+}
+
 // SetPurchaseDate sets the "purchase_date" field.
 func (_c *EntityCreate) SetPurchaseDate(v time.Time) *EntityCreate {
 	_c.mutation.SetPurchaseDate(v)
@@ -797,6 +839,18 @@ func (_c *EntityCreate) createSpec() (*Entity, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.WarrantyDetails(); ok {
 		_spec.SetField(entity.FieldWarrantyDetails, field.TypeString, value)
 		_node.WarrantyDetails = value
+	}
+	if value, ok := _c.mutation.ProductionDate(); ok {
+		_spec.SetField(entity.FieldProductionDate, field.TypeTime, value)
+		_node.ProductionDate = value
+	}
+	if value, ok := _c.mutation.ShelfLifeDays(); ok {
+		_spec.SetField(entity.FieldShelfLifeDays, field.TypeInt, value)
+		_node.ShelfLifeDays = &value
+	}
+	if value, ok := _c.mutation.ExpiryDate(); ok {
+		_spec.SetField(entity.FieldExpiryDate, field.TypeTime, value)
+		_node.ExpiryDate = value
 	}
 	if value, ok := _c.mutation.PurchaseDate(); ok {
 		_spec.SetField(entity.FieldPurchaseDate, field.TypeTime, value)

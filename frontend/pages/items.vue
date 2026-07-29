@@ -129,6 +129,8 @@
   const negateTags = useOptionalRouteQuery("negateTags", false);
   const onlyWithoutPhoto = useOptionalRouteQuery("onlyWithoutPhoto", false);
   const onlyWithPhoto = useOptionalRouteQuery("onlyWithPhoto", false);
+  const expiringOnly = useOptionalRouteQuery("expiringOnly", false);
+  const { threshold: expiryThreshold } = useExpiryThreshold();
   const orderBy = useOptionalRouteQuery("orderBy", "name");
   const qLoc = useOptionalRouteQuery("loc", []);
   const qTag = useOptionalRouteQuery("tag", []);
@@ -273,6 +275,12 @@
     }
   });
 
+  watch(expiringOnly, (newV, oldV) => {
+    if (newV !== oldV) {
+      search();
+    }
+  });
+
   watch(
     () => useRoute().query.q,
     (newV, oldV) => {
@@ -320,6 +328,7 @@
       negateTags: negateTags.value,
       onlyWithoutPhoto: onlyWithoutPhoto.value,
       onlyWithPhoto: onlyWithPhoto.value,
+      expiringOnly: expiringOnly.value,
       orderBy: orderBy.value,
       page: page.value,
       q: query.value,
@@ -357,6 +366,7 @@
       negateTags: negateTags.value,
       onlyWithoutPhoto: onlyWithoutPhoto.value,
       onlyWithPhoto: onlyWithPhoto.value,
+      expiringWithinDays: expiringOnly.value ? expiryThreshold.value : undefined,
       includeArchived: includeArchived.value,
       page: page.value,
       pageSize: pageSize.value,
@@ -427,6 +437,7 @@
       includeArchived.value ||
       onlyWithoutPhoto.value ||
       onlyWithPhoto.value ||
+      expiringOnly.value ||
       fieldTuples.value.length > 0
   );
 
@@ -434,6 +445,7 @@
     includeArchived.value = false;
     onlyWithoutPhoto.value = false;
     onlyWithPhoto.value = false;
+    expiringOnly.value = false;
     fieldTuples.value = [];
     query.value = "";
     selectedLocations.value = [];
@@ -532,6 +544,11 @@
               <Switch v-model="onlyWithPhoto" class="ml-auto" />
               <div class="grow" />
               <span class="text-right"> {{ $t("items.only_with_photo") }} </span>
+            </Label>
+            <Label class="flex cursor-pointer items-center">
+              <Switch v-model="expiringOnly" class="ml-auto" />
+              <div class="grow" />
+              <span class="text-right"> {{ $t("items.show_expiring_only") }} </span>
             </Label>
             <Label class="flex cursor-pointer flex-col gap-2">
               <span class="text-right">

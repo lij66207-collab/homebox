@@ -3533,6 +3533,10 @@ type EntityMutation struct {
 	lifetime_warranty           *bool
 	warranty_expires            *time.Time
 	warranty_details            *string
+	production_date             *time.Time
+	shelf_life_days             *int
+	addshelf_life_days          *int
+	expiry_date                 *time.Time
 	purchase_date               *time.Time
 	purchase_from               *string
 	purchase_price              *float64
@@ -4535,6 +4539,174 @@ func (m *EntityMutation) ResetWarrantyDetails() {
 	delete(m.clearedFields, entity.FieldWarrantyDetails)
 }
 
+// SetProductionDate sets the "production_date" field.
+func (m *EntityMutation) SetProductionDate(t time.Time) {
+	m.production_date = &t
+}
+
+// ProductionDate returns the value of the "production_date" field in the mutation.
+func (m *EntityMutation) ProductionDate() (r time.Time, exists bool) {
+	v := m.production_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductionDate returns the old "production_date" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldProductionDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductionDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductionDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductionDate: %w", err)
+	}
+	return oldValue.ProductionDate, nil
+}
+
+// ClearProductionDate clears the value of the "production_date" field.
+func (m *EntityMutation) ClearProductionDate() {
+	m.production_date = nil
+	m.clearedFields[entity.FieldProductionDate] = struct{}{}
+}
+
+// ProductionDateCleared returns if the "production_date" field was cleared in this mutation.
+func (m *EntityMutation) ProductionDateCleared() bool {
+	_, ok := m.clearedFields[entity.FieldProductionDate]
+	return ok
+}
+
+// ResetProductionDate resets all changes to the "production_date" field.
+func (m *EntityMutation) ResetProductionDate() {
+	m.production_date = nil
+	delete(m.clearedFields, entity.FieldProductionDate)
+}
+
+// SetShelfLifeDays sets the "shelf_life_days" field.
+func (m *EntityMutation) SetShelfLifeDays(i int) {
+	m.shelf_life_days = &i
+	m.addshelf_life_days = nil
+}
+
+// ShelfLifeDays returns the value of the "shelf_life_days" field in the mutation.
+func (m *EntityMutation) ShelfLifeDays() (r int, exists bool) {
+	v := m.shelf_life_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldShelfLifeDays returns the old "shelf_life_days" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldShelfLifeDays(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldShelfLifeDays is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldShelfLifeDays requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldShelfLifeDays: %w", err)
+	}
+	return oldValue.ShelfLifeDays, nil
+}
+
+// AddShelfLifeDays adds i to the "shelf_life_days" field.
+func (m *EntityMutation) AddShelfLifeDays(i int) {
+	if m.addshelf_life_days != nil {
+		*m.addshelf_life_days += i
+	} else {
+		m.addshelf_life_days = &i
+	}
+}
+
+// AddedShelfLifeDays returns the value that was added to the "shelf_life_days" field in this mutation.
+func (m *EntityMutation) AddedShelfLifeDays() (r int, exists bool) {
+	v := m.addshelf_life_days
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearShelfLifeDays clears the value of the "shelf_life_days" field.
+func (m *EntityMutation) ClearShelfLifeDays() {
+	m.shelf_life_days = nil
+	m.addshelf_life_days = nil
+	m.clearedFields[entity.FieldShelfLifeDays] = struct{}{}
+}
+
+// ShelfLifeDaysCleared returns if the "shelf_life_days" field was cleared in this mutation.
+func (m *EntityMutation) ShelfLifeDaysCleared() bool {
+	_, ok := m.clearedFields[entity.FieldShelfLifeDays]
+	return ok
+}
+
+// ResetShelfLifeDays resets all changes to the "shelf_life_days" field.
+func (m *EntityMutation) ResetShelfLifeDays() {
+	m.shelf_life_days = nil
+	m.addshelf_life_days = nil
+	delete(m.clearedFields, entity.FieldShelfLifeDays)
+}
+
+// SetExpiryDate sets the "expiry_date" field.
+func (m *EntityMutation) SetExpiryDate(t time.Time) {
+	m.expiry_date = &t
+}
+
+// ExpiryDate returns the value of the "expiry_date" field in the mutation.
+func (m *EntityMutation) ExpiryDate() (r time.Time, exists bool) {
+	v := m.expiry_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryDate returns the old "expiry_date" field's value of the Entity entity.
+// If the Entity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityMutation) OldExpiryDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryDate: %w", err)
+	}
+	return oldValue.ExpiryDate, nil
+}
+
+// ClearExpiryDate clears the value of the "expiry_date" field.
+func (m *EntityMutation) ClearExpiryDate() {
+	m.expiry_date = nil
+	m.clearedFields[entity.FieldExpiryDate] = struct{}{}
+}
+
+// ExpiryDateCleared returns if the "expiry_date" field was cleared in this mutation.
+func (m *EntityMutation) ExpiryDateCleared() bool {
+	_, ok := m.clearedFields[entity.FieldExpiryDate]
+	return ok
+}
+
+// ResetExpiryDate resets all changes to the "expiry_date" field.
+func (m *EntityMutation) ResetExpiryDate() {
+	m.expiry_date = nil
+	delete(m.clearedFields, entity.FieldExpiryDate)
+}
+
 // SetPurchaseDate sets the "purchase_date" field.
 func (m *EntityMutation) SetPurchaseDate(t time.Time) {
 	m.purchase_date = &t
@@ -5313,7 +5485,7 @@ func (m *EntityMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EntityMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, entity.FieldCreatedAt)
 	}
@@ -5370,6 +5542,15 @@ func (m *EntityMutation) Fields() []string {
 	}
 	if m.warranty_details != nil {
 		fields = append(fields, entity.FieldWarrantyDetails)
+	}
+	if m.production_date != nil {
+		fields = append(fields, entity.FieldProductionDate)
+	}
+	if m.shelf_life_days != nil {
+		fields = append(fields, entity.FieldShelfLifeDays)
+	}
+	if m.expiry_date != nil {
+		fields = append(fields, entity.FieldExpiryDate)
 	}
 	if m.purchase_date != nil {
 		fields = append(fields, entity.FieldPurchaseDate)
@@ -5438,6 +5619,12 @@ func (m *EntityMutation) Field(name string) (ent.Value, bool) {
 		return m.WarrantyExpires()
 	case entity.FieldWarrantyDetails:
 		return m.WarrantyDetails()
+	case entity.FieldProductionDate:
+		return m.ProductionDate()
+	case entity.FieldShelfLifeDays:
+		return m.ShelfLifeDays()
+	case entity.FieldExpiryDate:
+		return m.ExpiryDate()
 	case entity.FieldPurchaseDate:
 		return m.PurchaseDate()
 	case entity.FieldPurchaseFrom:
@@ -5499,6 +5686,12 @@ func (m *EntityMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldWarrantyExpires(ctx)
 	case entity.FieldWarrantyDetails:
 		return m.OldWarrantyDetails(ctx)
+	case entity.FieldProductionDate:
+		return m.OldProductionDate(ctx)
+	case entity.FieldShelfLifeDays:
+		return m.OldShelfLifeDays(ctx)
+	case entity.FieldExpiryDate:
+		return m.OldExpiryDate(ctx)
 	case entity.FieldPurchaseDate:
 		return m.OldPurchaseDate(ctx)
 	case entity.FieldPurchaseFrom:
@@ -5655,6 +5848,27 @@ func (m *EntityMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetWarrantyDetails(v)
 		return nil
+	case entity.FieldProductionDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductionDate(v)
+		return nil
+	case entity.FieldShelfLifeDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetShelfLifeDays(v)
+		return nil
+	case entity.FieldExpiryDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryDate(v)
+		return nil
 	case entity.FieldPurchaseDate:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -5721,6 +5935,9 @@ func (m *EntityMutation) AddedFields() []string {
 	if m.addasset_id != nil {
 		fields = append(fields, entity.FieldAssetID)
 	}
+	if m.addshelf_life_days != nil {
+		fields = append(fields, entity.FieldShelfLifeDays)
+	}
 	if m.addpurchase_price != nil {
 		fields = append(fields, entity.FieldPurchasePrice)
 	}
@@ -5741,6 +5958,8 @@ func (m *EntityMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedLowStockThreshold()
 	case entity.FieldAssetID:
 		return m.AddedAssetID()
+	case entity.FieldShelfLifeDays:
+		return m.AddedShelfLifeDays()
 	case entity.FieldPurchasePrice:
 		return m.AddedPurchasePrice()
 	case entity.FieldSoldPrice:
@@ -5774,6 +5993,13 @@ func (m *EntityMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddAssetID(v)
+		return nil
+	case entity.FieldShelfLifeDays:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddShelfLifeDays(v)
 		return nil
 	case entity.FieldPurchasePrice:
 		v, ok := value.(float64)
@@ -5823,6 +6049,15 @@ func (m *EntityMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(entity.FieldWarrantyDetails) {
 		fields = append(fields, entity.FieldWarrantyDetails)
+	}
+	if m.FieldCleared(entity.FieldProductionDate) {
+		fields = append(fields, entity.FieldProductionDate)
+	}
+	if m.FieldCleared(entity.FieldShelfLifeDays) {
+		fields = append(fields, entity.FieldShelfLifeDays)
+	}
+	if m.FieldCleared(entity.FieldExpiryDate) {
+		fields = append(fields, entity.FieldExpiryDate)
 	}
 	if m.FieldCleared(entity.FieldPurchaseDate) {
 		fields = append(fields, entity.FieldPurchaseDate)
@@ -5879,6 +6114,15 @@ func (m *EntityMutation) ClearField(name string) error {
 		return nil
 	case entity.FieldWarrantyDetails:
 		m.ClearWarrantyDetails()
+		return nil
+	case entity.FieldProductionDate:
+		m.ClearProductionDate()
+		return nil
+	case entity.FieldShelfLifeDays:
+		m.ClearShelfLifeDays()
+		return nil
+	case entity.FieldExpiryDate:
+		m.ClearExpiryDate()
 		return nil
 	case entity.FieldPurchaseDate:
 		m.ClearPurchaseDate()
@@ -5959,6 +6203,15 @@ func (m *EntityMutation) ResetField(name string) error {
 		return nil
 	case entity.FieldWarrantyDetails:
 		m.ResetWarrantyDetails()
+		return nil
+	case entity.FieldProductionDate:
+		m.ResetProductionDate()
+		return nil
+	case entity.FieldShelfLifeDays:
+		m.ResetShelfLifeDays()
+		return nil
+	case entity.FieldExpiryDate:
+		m.ResetExpiryDate()
 		return nil
 	case entity.FieldPurchaseDate:
 		m.ResetPurchaseDate()

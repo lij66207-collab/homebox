@@ -295,7 +295,7 @@ func parseExpiryReminderConfig(settings map[string]interface{}) expiryReminderCo
 }
 
 // SendExpiryReminders pushes one aggregated Server酱 message per group about
-// items whose expiry date (stored in the warranty-expires field) is exactly N
+// items whose expiry date (the expiry_date field, 截止日期) is exactly N
 // days away, with N taken from the group's `expiry_reminder.days_before`
 // setting (default 30/7/1). A group is only considered when the reminder is
 // enabled, a sendkey is configured, and the current local hour matches the
@@ -344,7 +344,7 @@ func (svc *BackgroundService) SendExpiryReminders(ctx context.Context) error {
 			}
 		}
 
-		items, err := svc.repos.Entities.GetWarrantyExpiringBetween(ctx, group.ID, today, today.AddDate(0, 0, maxDays+1))
+		items, err := svc.repos.Entities.GetExpiringBetween(ctx, group.ID, today, today.AddDate(0, 0, maxDays+1))
 		if err != nil {
 			logger.Err(err).Msg("expiry reminder: failed to query expiring items")
 			if firstErr == nil {
@@ -357,7 +357,7 @@ func (svc *BackgroundService) SendExpiryReminders(ctx context.Context) error {
 		bldr.WriteString("| 物品 | 到期日期 | 剩余天数 |\n| --- | --- | --- |\n")
 		count := 0
 		for _, item := range items {
-			expires := item.WarrantyExpires.Time()
+			expires := item.ExpiryDate.Time()
 			expiresDay := time.Date(expires.Year(), expires.Month(), expires.Day(), 0, 0, 0, 0, expires.Location())
 			days := int(expiresDay.Sub(today).Hours() / 24)
 			if _, ok := thresholds[days]; !ok {

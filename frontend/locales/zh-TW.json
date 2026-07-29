@@ -1,4 +1,49 @@
 {
+    "assistant": {
+        "dialog": {
+            "cancel": "取消",
+            "cancelled": "已取消",
+            "confirm": "確認",
+            "create_failed": "建立失敗。",
+            "create_item": "建立物品",
+            "create_location": "建立位置",
+            "create_success": "建立成功。",
+            "done": "完成",
+            "empty": "暫無對話。點擊麥克風，比如說「把風扇放到 002 位置」。",
+            "hint": "點擊麥克風開始錄音，再次點擊停止並傳送。",
+            "location_label": "位置",
+            "location_not_found": "找不到該位置路徑；已在不指定父位置的情況下建立。",
+            "mic_denied": "麥克風權限被拒絕。請在瀏覽器的網站設定中允許麥克風存取。",
+            "mic_insecure": "麥克風需要安全環境（HTTPS）。請透過 https:// 或 localhost 存取 Homebox。",
+            "mic_unsupported": "此瀏覽器不支援麥克風錄音。",
+            "no_results": "沒有符合的結果。",
+            "not_configured": "語音助手未設定。請在「集合 → 語音助手」中設定語音辨識（STT）。",
+            "processing": "處理中…",
+            "quantity_label": "數量",
+            "query_results": "結果",
+            "recording": "錄音中… 再次點擊停止並傳送",
+            "request_failed": "語音請求失敗，請重試。",
+            "title": "語音助手"
+        },
+        "open": "語音助手",
+        "settings": {
+            "ai_disabled_hint": "伺服器未啟用 AI 服務。請設定 HBOX_AI_* 環境變數（例如 Kimi）以啟用語音助手的意圖解析。",
+            "description": "設定語音助手使用的語音辨識（STT）端點。它必須提供與 OpenAI 相容的 /audio/transcriptions 端點（OpenAI Whisper、Groq 或自行架設的 faster-whisper）。注意：Kimi 不提供語音辨識，因此需要獨立的 STT 服務。",
+            "enabled": "啟用語音助手",
+            "save": "儲存",
+            "stt_api_key": "STT API 金鑰",
+            "stt_api_key_configured_placeholder": "已設定（留空則保留目前金鑰）",
+            "stt_api_key_placeholder": "未設定",
+            "stt_base_url": "STT Base URL",
+            "stt_base_url_hint": "OpenAI 相容的 API 基礎網址，例如 https://api.openai.com/v1。伺服器會將音訊提交到該網址下的 /audio/transcriptions 端點。",
+            "stt_model": "STT 模型",
+            "toast": {
+                "load_failed": "載入助手設定失敗。",
+                "save_failed": "儲存助手設定失敗。",
+                "saved": "助手設定已儲存。"
+            }
+        }
+    },
     "collection": {
         "copy_invite": "複製邀請連結",
         "create_invite": "製作邀請函",
@@ -35,9 +80,12 @@
         "no_invites": "無邀請",
         "remaining_uses": "剩餘使用次數",
         "tabs": {
+            "assistant": "語音助手",
+            "entity_types": "實體類型",
             "invites": "邀請",
             "members": "成員",
             "notifiers": "通知",
+            "reminders": "到期提醒",
             "settings": "設定",
             "tools": "工具"
         },
@@ -428,6 +476,8 @@
         "password": "密碼",
         "preview": "預覽",
         "quantity": "數量",
+        "low_stock_threshold": "低庫存閾值",
+        "low_stock_threshold_sub": "數量低於或等於該值時收到通知，留空則不啟用。",
         "read_docs": "參閱說明",
         "return_home": "回到首頁",
         "save": "儲存",
@@ -522,6 +572,9 @@
             "view_image": "檢視圖片"
         },
         "edit_details": "編輯詳細資料",
+        "expired": "已過期",
+        "expiry_date": "截止日期",
+        "expiry_details": "保存期限詳情",
         "field": "欄位",
         "field_selector": "欄位選擇",
         "field_value": "欄位值",
@@ -537,6 +590,7 @@
         "manufacturer": "製造商",
         "model_number": "型號",
         "name": "名稱",
+        "near_expiry": "即將到期（{days} 天）",
         "negate_tags": "移除選取標籤",
         "next_page": "下一頁",
         "no_attachments": "未找到附件",
@@ -544,6 +598,9 @@
         "notes": "備註",
         "only_with_photo": "僅包含圖片物品",
         "only_without_photo": "僅未包含圖片物品",
+        "ai_search": "AI 模糊",
+        "ai_search_banner": "AI 模糊搜尋結果（{n} 項）",
+        "ai_search_failed": "AI 模糊搜尋失敗",
         "options": "選項",
         "order_by": "排序",
         "pages": "第{ page } 頁(共{ totalPages })",
@@ -551,6 +608,7 @@
         "photo": "圖片",
         "photos": "圖片",
         "prev_page": "上一頁",
+        "production_date": "生產日期",
         "purchase_date": "購買日期",
         "purchase_details": "購入資訊",
         "purchase_price": "購入金額",
@@ -564,8 +622,11 @@
         "select_field": "選擇欄位",
         "select_value": "選擇值",
         "serial_number": "序號",
+        "shelf_life_days": "保存期限（天）",
+        "shelf_life_days_value": "{days} 天",
         "show_advanced_view_options": "顯示進階顯示選項",
         "show_empty": "顯示空白",
+        "show_expiring_only": "只顯示即將到期的物品",
         "sold_at": "售出價格",
         "sold_details": "售出資訊",
         "sold_price": "售出價格",
@@ -769,6 +830,25 @@
         "url": "網址",
         "user_profile": "使用者資料",
         "user_profile_sub": "邀請使用者並管理您的帳戶。"
+    },
+    "reminders": {
+        "days_before": "提前多少天提醒",
+        "days_option": "{days} 天",
+        "description": "當物品即將到期時接收 Server醬（ServerChan）推播。使用物品專屬的到期日期；可直接設定，或由生產日期和保存期限推算。",
+        "enabled": "啟用到期提醒",
+        "notify_hour": "通知時間",
+        "save": "儲存",
+        "send_test": "傳送測試訊息",
+        "sendkey": "ServerChan SendKey",
+        "sendkey_configured_placeholder": "已設定（留空則保留目前金鑰）",
+        "sendkey_placeholder": "未設定",
+        "toast": {
+            "load_failed": "載入提醒設定失敗。",
+            "save_failed": "儲存提醒設定失敗。",
+            "saved": "提醒設定已儲存。",
+            "test_failed": "測試訊息傳送失敗，請檢查 SendKey。",
+            "test_sent": "測試訊息已傳送。"
+        }
     },
     "reports": {
         "label_generator": {

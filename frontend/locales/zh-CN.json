@@ -1,4 +1,49 @@
 {
+    "assistant": {
+        "dialog": {
+            "cancel": "取消",
+            "cancelled": "已取消",
+            "confirm": "确认",
+            "create_failed": "创建失败。",
+            "create_item": "创建物品",
+            "create_location": "创建位置",
+            "create_success": "创建成功。",
+            "done": "完成",
+            "empty": "暂无对话。点击麦克风，比如说“把风扇放到 002 位置”。",
+            "hint": "点击麦克风开始录音，再次点击停止并发送。",
+            "location_label": "位置",
+            "location_not_found": "未找到该位置路径；已在不指定父位置的情况下创建。",
+            "mic_denied": "麦克风权限被拒绝。请在浏览器的站点设置中允许麦克风访问。",
+            "mic_insecure": "麦克风需要安全上下文（HTTPS）。请通过 https:// 或 localhost 访问 Homebox。",
+            "mic_unsupported": "此浏览器不支持麦克风录音。",
+            "no_results": "没有匹配的结果。",
+            "not_configured": "语音助手未配置。请在“集合 → 语音助手”中设置语音识别（STT）。",
+            "processing": "处理中…",
+            "quantity_label": "数量",
+            "query_results": "结果",
+            "recording": "录音中… 再次点击停止并发送",
+            "request_failed": "语音请求失败，请重试。",
+            "title": "语音助手"
+        },
+        "open": "语音助手",
+        "settings": {
+            "ai_disabled_hint": "服务器未启用 AI 服务。请配置 HBOX_AI_* 环境变量（例如 Kimi）以启用语音助手的意图解析。",
+            "description": "配置语音助手使用的语音识别（STT）端点。它必须提供与 OpenAI 兼容的 /audio/transcriptions 端点（OpenAI Whisper、Groq 或自托管的 faster-whisper）。注意：Kimi 不提供语音识别，因此需要单独的 STT 服务。",
+            "enabled": "启用语音助手",
+            "save": "保存",
+            "stt_api_key": "STT API 密钥",
+            "stt_api_key_configured_placeholder": "已配置（留空则保留当前密钥）",
+            "stt_api_key_placeholder": "未配置",
+            "stt_base_url": "STT Base URL",
+            "stt_base_url_hint": "OpenAI 兼容的 API 基础地址，例如 https://api.openai.com/v1。服务器会将音频提交到该地址下的 /audio/transcriptions 端点。",
+            "stt_model": "STT 模型",
+            "toast": {
+                "load_failed": "加载助手设置失败。",
+                "save_failed": "保存助手设置失败。",
+                "saved": "助手设置已保存。"
+            }
+        }
+    },
     "collection": {
         "copy_invite": "复制邀请链接",
         "create_invite": "创建邀请",
@@ -35,10 +80,12 @@
         "no_invites": "没有邀请",
         "remaining_uses": "剩余可用次数",
         "tabs": {
+            "assistant": "语音助手",
             "entity_types": "实体类型",
             "invites": "邀请",
             "members": "成员",
             "notifiers": "通知器",
+            "reminders": "到期提醒",
             "settings": "设置",
             "tools": "工具"
         },
@@ -664,6 +711,9 @@
             "change_entity_type_confirm": "更改实体类型可能会导致当前类型与新类型之间不共有的字段数据丢失。确定要更改实体类型吗？"
         },
         "edit_details": "编辑详情",
+        "expired": "已过期",
+        "expiry_date": "截止日期",
+        "expiry_details": "保质期详情",
         "field": "字段",
         "field_selector": "字段选择",
         "field_value": "字段值",
@@ -679,6 +729,7 @@
         "manufacturer": "制造商",
         "model_number": "型号",
         "name": "名称",
+        "near_expiry": "临近过期（{days} 天）",
         "negate_tags": "排除所选标签",
         "next_page": "下一页",
         "no_attachments": "没有找到附件",
@@ -696,6 +747,7 @@
         "photo": "照片",
         "photos": "照片",
         "prev_page": "上一页",
+        "production_date": "生产日期",
         "purchase_date": "购买日期",
         "purchase_details": "购买详情",
         "purchase_price": "购买价格",
@@ -709,8 +761,11 @@
         "select_field": "选择字段",
         "select_value": "选择值",
         "serial_number": "序列号",
+        "shelf_life_days": "保质期（天）",
+        "shelf_life_days_value": "{days} 天",
         "show_advanced_view_options": "显示高级选项",
         "show_empty": "显示空值",
+        "show_expiring_only": "仅显示即将过期的物品",
         "sold_at": "出售日期",
         "sold_details": "售出详情",
         "sold_price": "出售价格",
@@ -979,6 +1034,25 @@
         "url": "网址",
         "user_profile": "用户资料",
         "user_profile_sub": "邀请用户共同管理您的资产。"
+    },
+    "reminders": {
+        "days_before": "提前多少天提醒",
+        "days_option": "{days} 天",
+        "description": "当物品即将过期时接收 Server酱（ServerChan）推送。使用物品专属的过期日期；可直接设置，或由生产日期和保质期推导。",
+        "enabled": "启用过期提醒",
+        "notify_hour": "通知时间",
+        "save": "保存",
+        "send_test": "发送测试消息",
+        "sendkey": "ServerChan SendKey",
+        "sendkey_configured_placeholder": "已配置（留空则保留当前密钥）",
+        "sendkey_placeholder": "未配置",
+        "toast": {
+            "load_failed": "加载提醒设置失败。",
+            "save_failed": "保存提醒设置失败。",
+            "saved": "提醒设置已保存。",
+            "test_failed": "测试消息发送失败，请检查 SendKey。",
+            "test_sent": "测试消息已发送。"
+        }
     },
     "reports": {
         "label_generator": {

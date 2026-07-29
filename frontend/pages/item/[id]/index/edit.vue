@@ -104,6 +104,42 @@
     },
   });
 
+  // Expiry fields: computed proxies into the loaded entity so the composable's
+  // live derivation (productionDate + shelfLifeDays <-> expiryDate) writes back
+  // onto the item that gets saved.
+  const productionDateProxy = computed({
+    get: () => item.value?.productionDate ?? "",
+    set: v => {
+      if (item.value) item.value.productionDate = v;
+    },
+  });
+  const expiryDateProxy = computed({
+    get: () => item.value?.expiryDate ?? "",
+    set: v => {
+      if (item.value) item.value.expiryDate = v;
+    },
+  });
+  const shelfLifeDaysProxy = computed<number | null>({
+    get: () => item.value?.shelfLifeDays ?? null,
+    set: v => {
+      if (item.value) item.value.shelfLifeDays = v;
+    },
+  });
+  useExpiryFields({
+    productionDate: productionDateProxy,
+    shelfLifeDays: shelfLifeDaysProxy,
+    expiryDate: expiryDateProxy,
+  });
+
+  // Shelf life is nullable; the number input needs an empty-string
+  // representation for "not set" (same pattern as lowStockThresholdProxy).
+  const shelfLifeInputProxy = computed({
+    get: () => shelfLifeDaysProxy.value ?? "",
+    set: v => {
+      shelfLifeDaysProxy.value = v === "" || v === null || Number.isNaN(Number(v)) ? null : Number(v);
+    },
+  });
+
   async function saveItem(redirect: boolean) {
     if (!location.value?.id && !parent.value?.id) {
       toast.error(t("items.toast.failed_save_no_location"));
@@ -295,6 +331,19 @@
       label: "items.warranty_details",
       ref: "warrantyDetails",
       maxLength: 1000,
+    },
+  ];
+
+  const expiryFields: FormField[] = [
+    {
+      type: "date",
+      label: "items.production_date",
+      ref: "productionDate",
+    },
+    {
+      type: "date",
+      label: "items.expiry_date",
+      ref: "expiryDate",
     },
   ];
 
@@ -1010,6 +1059,35 @@
                   inline
                 />
               </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card v-if="preferences.editorAdvancedView" class="overflow-visible shadow-xl">
+          <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg font-medium leading-6">{{ $t("items.expiry_details") }}</h3>
+          </div>
+          <div class="border-t sm:p-0">
+            <div v-for="field in expiryFields" :key="field.ref" class="grid grid-cols-1 sm:divide-y">
+              <div class="border-b px-4 pb-4 pt-2 sm:px-6">
+                <FormDatePicker
+                  v-if="field.type === 'date'"
+                  v-model="item[field.ref]"
+                  :label="$t(field.label)"
+                  date-only
+                  inline
+                />
+              </div>
+            </div>
+            <div class="border-b px-4 pb-4 pt-2 sm:px-6">
+              <FormTextField
+                v-model.number="shelfLifeInputProxy"
+                type="number"
+                step="any"
+                :min="0"
+                :label="$t('items.shelf_life_days')"
+                inline
+              />
             </div>
           </div>
         </Card>

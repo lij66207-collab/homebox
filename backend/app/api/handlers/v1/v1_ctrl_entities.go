@@ -48,12 +48,13 @@ func startEntityCtrlSpan(ctx context.Context, name string, attrs ...attribute.Ke
 //	@Summary	Query All Entities
 //	@Tags		Entities
 //	@Produce	json
-//	@Param		q			query		string		false	"search string"
-//	@Param		page		query		int			false	"page number"
-//	@Param		pageSize	query		int			false	"items per page"
-//	@Param		tags		query		[]string	false	"tags Ids"		collectionFormat(multi)
-//	@Param		parentIds	query		[]string	false	"parent Ids"	collectionFormat(multi)
-//	@Success	200			{object}	repo.EntityListResult
+//	@Param		q					query		string		false	"search string"
+//	@Param		page				query		int			false	"page number"
+//	@Param		pageSize			query		int			false	"items per page"
+//	@Param		tags				query		[]string	false	"tags Ids"		collectionFormat(multi)
+//	@Param		parentIds			query		[]string	false	"parent Ids"	collectionFormat(multi)
+//	@Param		expiringWithinDays	query		int			false	"only items whose expiry date falls within the next N days"
+//	@Success	200					{object}	repo.EntityListResult
 //	@Router		/v1/entities [GET]
 //	@Security	Bearer
 func (ctrl *V1Controller) HandleEntitiesGetAll() errchain.HandlerFunc {
@@ -85,6 +86,11 @@ func (ctrl *V1Controller) HandleEntitiesGetAll() errchain.HandlerFunc {
 			IncludeArchived:  queryBool(params.Get("includeArchived")),
 			Fields:           filterFieldItems(params["fields"]),
 			OrderBy:          params.Get("orderBy"),
+		}
+
+		// expiringWithinDays <= 0 (or absent) disables the expiry filter.
+		if days := queryIntOrNegativeOne(params.Get("expiringWithinDays")); days > 0 {
+			v.ExpiringWithinDays = days
 		}
 
 		// Parse isLocation filter: "true" = locations only, "false" = items only, absent = default (items only)

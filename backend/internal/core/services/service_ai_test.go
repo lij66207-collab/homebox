@@ -296,6 +296,38 @@ func TestExtractJSONObject(t *testing.T) {
 	}
 }
 
+func TestValidAIDate(t *testing.T) {
+	strptr := func(s string) *string { return &s }
+
+	cases := []struct {
+		name  string
+		input *string
+		want  string
+	}{
+		{name: "nil", input: nil, want: ""},
+		{name: "empty", input: strptr(""), want: ""},
+		{name: "canonical", input: strptr("2026-07-29"), want: "2026-07-29"},
+		{name: "canonical padded", input: strptr("2026-01-05"), want: "2026-01-05"},
+		{name: "slashes unpadded", input: strptr("2026/7/29"), want: "2026-07-29"},
+		{name: "dots unpadded", input: strptr("2026.7.29"), want: "2026-07-29"},
+		{name: "cjk", input: strptr("2026年7月29日"), want: "2026-07-29"},
+		{name: "cjk no trailing day marker", input: strptr("2026年7月29"), want: "2026-07-29"},
+		{name: "dashes unpadded", input: strptr("2026-7-9"), want: "2026-07-09"},
+		{name: "surrounding whitespace", input: strptr("  2026/7/29  "), want: "2026-07-29"},
+		{name: "garbage", input: strptr("garbage"), want: ""},
+		{name: "partial", input: strptr("2026-07"), want: ""},
+		{name: "invalid month", input: strptr("2026-13-01"), want: ""},
+		{name: "invalid day", input: strptr("2026-02-30"), want: ""},
+		{name: "two digit year", input: strptr("26-07-29"), want: ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, validAIDate(tc.input))
+		})
+	}
+}
+
 func TestAIService_ParseBatchText_HappyPath(t *testing.T) {
 	ctx := context.Background()
 

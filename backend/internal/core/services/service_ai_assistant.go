@@ -77,7 +77,11 @@ type AssistantAction struct {
 	LocationPath *string  `json:"location_path,omitempty"`
 	Quantity     *float64 `json:"quantity,omitempty"`
 	Description  *string  `json:"description,omitempty"`
-	Keyword      string   `json:"keyword,omitempty"`
+	// Expiry fields for create_item: dates as YYYY-MM-DD, shelf life in days.
+	ProductionDate string `json:"production_date,omitempty"`
+	ShelfLifeDays  *int   `json:"shelf_life_days,omitempty"`
+	ExpiryDate     string `json:"expiry_date,omitempty"`
+	Keyword        string `json:"keyword,omitempty"`
 }
 
 // AssistantReply is the parsed model response: a natural-language reply for
@@ -306,9 +310,11 @@ func buildAIAssistantPrompt(locations []aiCandidate) string {
    {"type": "create_location", "name": string, "parent_path": string|null}
    - parent_path 为父位置的完整路径，null 表示顶级位置；只能从下方候选位置路径中选择。
 2. create_item — 新建物品：
-   {"type": "create_item", "name": string, "location_path": string|null, "quantity": number|null, "description": string|null}
+   {"type": "create_item", "name": string, "location_path": string|null, "quantity": number|null, "description": string|null, "production_date": string|null, "shelf_life_days": number|null, "expiry_date": string|null}
    - location_path 必须完全取自下方候选位置路径，用户未指明位置时用 null。
    - quantity 未指明时用 null，description 未指明时用 null。
+   - 生产日期用 production_date，截止日期用 expiry_date，格式均为 YYYY-MM-DD（月和日必须补零，如 2026-07-01，不要写成 2026-7-1），未指明时省略。
+   - 保质期用 shelf_life_days（整数天数）；用户说“12个月”“一年”等时长时换算成天数（一年按 365 天、一个月按 30 天）。
 3. query_item — 查询物品：{"type": "query_item", "keyword": string}
 4. query_location — 查询位置：{"type": "query_location", "keyword": string}
 
@@ -371,6 +377,15 @@ func parseAIAssistantReply(content string) AssistantReply {
 
 		if action.Quantity != nil && *action.Quantity < 1 {
 			action.Quantity = nil
+		}
+
+		// Normalize AI-spoken dates to YYYY-MM-DD; unparseable values are
+		// dropped rather than passed through to the create form.
+		if action.ProductionDate != "" {
+			action.ProductionDate = validAIDate(&action.ProductionDate)
+		}
+		if action.ExpiryDate != "" {
+			action.ExpiryDate = validAIDate(&action.ExpiryDate)
 		}
 
 		out.Actions = append(out.Actions, action)

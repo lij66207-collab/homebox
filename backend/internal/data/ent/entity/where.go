@@ -151,6 +151,21 @@ func WarrantyDetails(v string) predicate.Entity {
 	return predicate.Entity(sql.FieldEQ(FieldWarrantyDetails, v))
 }
 
+// ProductionDate applies equality check predicate on the "production_date" field. It's identical to ProductionDateEQ.
+func ProductionDate(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldProductionDate, v))
+}
+
+// ShelfLifeDays applies equality check predicate on the "shelf_life_days" field. It's identical to ShelfLifeDaysEQ.
+func ShelfLifeDays(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldShelfLifeDays, v))
+}
+
+// ExpiryDate applies equality check predicate on the "expiry_date" field. It's identical to ExpiryDateEQ.
+func ExpiryDate(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldExpiryDate, v))
+}
+
 // PurchaseDate applies equality check predicate on the "purchase_date" field. It's identical to PurchaseDateEQ.
 func PurchaseDate(v time.Time) predicate.Entity {
 	return predicate.Entity(sql.FieldEQ(FieldPurchaseDate, v))
@@ -1084,6 +1099,156 @@ func WarrantyDetailsEqualFold(v string) predicate.Entity {
 // WarrantyDetailsContainsFold applies the ContainsFold predicate on the "warranty_details" field.
 func WarrantyDetailsContainsFold(v string) predicate.Entity {
 	return predicate.Entity(sql.FieldContainsFold(FieldWarrantyDetails, v))
+}
+
+// ProductionDateEQ applies the EQ predicate on the "production_date" field.
+func ProductionDateEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldProductionDate, v))
+}
+
+// ProductionDateNEQ applies the NEQ predicate on the "production_date" field.
+func ProductionDateNEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNEQ(FieldProductionDate, v))
+}
+
+// ProductionDateIn applies the In predicate on the "production_date" field.
+func ProductionDateIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldIn(FieldProductionDate, vs...))
+}
+
+// ProductionDateNotIn applies the NotIn predicate on the "production_date" field.
+func ProductionDateNotIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNotIn(FieldProductionDate, vs...))
+}
+
+// ProductionDateGT applies the GT predicate on the "production_date" field.
+func ProductionDateGT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGT(FieldProductionDate, v))
+}
+
+// ProductionDateGTE applies the GTE predicate on the "production_date" field.
+func ProductionDateGTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGTE(FieldProductionDate, v))
+}
+
+// ProductionDateLT applies the LT predicate on the "production_date" field.
+func ProductionDateLT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLT(FieldProductionDate, v))
+}
+
+// ProductionDateLTE applies the LTE predicate on the "production_date" field.
+func ProductionDateLTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLTE(FieldProductionDate, v))
+}
+
+// ProductionDateIsNil applies the IsNil predicate on the "production_date" field.
+func ProductionDateIsNil() predicate.Entity {
+	return predicate.Entity(sql.FieldIsNull(FieldProductionDate))
+}
+
+// ProductionDateNotNil applies the NotNil predicate on the "production_date" field.
+func ProductionDateNotNil() predicate.Entity {
+	return predicate.Entity(sql.FieldNotNull(FieldProductionDate))
+}
+
+// ShelfLifeDaysEQ applies the EQ predicate on the "shelf_life_days" field.
+func ShelfLifeDaysEQ(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysNEQ applies the NEQ predicate on the "shelf_life_days" field.
+func ShelfLifeDaysNEQ(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldNEQ(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysIn applies the In predicate on the "shelf_life_days" field.
+func ShelfLifeDaysIn(vs ...int) predicate.Entity {
+	return predicate.Entity(sql.FieldIn(FieldShelfLifeDays, vs...))
+}
+
+// ShelfLifeDaysNotIn applies the NotIn predicate on the "shelf_life_days" field.
+func ShelfLifeDaysNotIn(vs ...int) predicate.Entity {
+	return predicate.Entity(sql.FieldNotIn(FieldShelfLifeDays, vs...))
+}
+
+// ShelfLifeDaysGT applies the GT predicate on the "shelf_life_days" field.
+func ShelfLifeDaysGT(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldGT(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysGTE applies the GTE predicate on the "shelf_life_days" field.
+func ShelfLifeDaysGTE(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldGTE(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysLT applies the LT predicate on the "shelf_life_days" field.
+func ShelfLifeDaysLT(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldLT(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysLTE applies the LTE predicate on the "shelf_life_days" field.
+func ShelfLifeDaysLTE(v int) predicate.Entity {
+	return predicate.Entity(sql.FieldLTE(FieldShelfLifeDays, v))
+}
+
+// ShelfLifeDaysIsNil applies the IsNil predicate on the "shelf_life_days" field.
+func ShelfLifeDaysIsNil() predicate.Entity {
+	return predicate.Entity(sql.FieldIsNull(FieldShelfLifeDays))
+}
+
+// ShelfLifeDaysNotNil applies the NotNil predicate on the "shelf_life_days" field.
+func ShelfLifeDaysNotNil() predicate.Entity {
+	return predicate.Entity(sql.FieldNotNull(FieldShelfLifeDays))
+}
+
+// ExpiryDateEQ applies the EQ predicate on the "expiry_date" field.
+func ExpiryDateEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateNEQ applies the NEQ predicate on the "expiry_date" field.
+func ExpiryDateNEQ(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNEQ(FieldExpiryDate, v))
+}
+
+// ExpiryDateIn applies the In predicate on the "expiry_date" field.
+func ExpiryDateIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateNotIn applies the NotIn predicate on the "expiry_date" field.
+func ExpiryDateNotIn(vs ...time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldNotIn(FieldExpiryDate, vs...))
+}
+
+// ExpiryDateGT applies the GT predicate on the "expiry_date" field.
+func ExpiryDateGT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGT(FieldExpiryDate, v))
+}
+
+// ExpiryDateGTE applies the GTE predicate on the "expiry_date" field.
+func ExpiryDateGTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldGTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateLT applies the LT predicate on the "expiry_date" field.
+func ExpiryDateLT(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLT(FieldExpiryDate, v))
+}
+
+// ExpiryDateLTE applies the LTE predicate on the "expiry_date" field.
+func ExpiryDateLTE(v time.Time) predicate.Entity {
+	return predicate.Entity(sql.FieldLTE(FieldExpiryDate, v))
+}
+
+// ExpiryDateIsNil applies the IsNil predicate on the "expiry_date" field.
+func ExpiryDateIsNil() predicate.Entity {
+	return predicate.Entity(sql.FieldIsNull(FieldExpiryDate))
+}
+
+// ExpiryDateNotNil applies the NotNil predicate on the "expiry_date" field.
+func ExpiryDateNotNil() predicate.Entity {
+	return predicate.Entity(sql.FieldNotNull(FieldExpiryDate))
 }
 
 // PurchaseDateEQ applies the EQ predicate on the "purchase_date" field.
