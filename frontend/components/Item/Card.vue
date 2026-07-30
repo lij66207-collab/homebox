@@ -65,6 +65,16 @@
               </TooltipContent>
             </Tooltip>
             <div class="grow" />
+            <Tooltip v-if="item.purchasePrice > 0">
+              <TooltipTrigger>
+                <Badge variant="secondary">
+                  <Currency :amount="item.purchasePrice" />
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                {{ $t("items.purchase_price") }}
+              </TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger>
                 <Badge>
@@ -95,6 +105,7 @@
   import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
   import { Separator } from "@/components/ui/separator";
   import Markdown from "@/components/global/Markdown.vue";
+  import Currency from "~/components/global/Currency.vue";
   import TagChip from "@/components/Tag/Chip.vue";
   import type { Row } from "@tanstack/vue-table";
   import { Checkbox } from "@/components/ui/checkbox";
